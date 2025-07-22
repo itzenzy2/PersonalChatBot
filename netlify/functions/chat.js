@@ -6,7 +6,7 @@ exports.handler = async function(event, context) {
   }
   
   try {
-    // ▼▼▼ NEW: RECEIVE BOTH HISTORY AND THE SELECTED MODEL ▼▼▼
+    // ▼▼▼ RECEIVE THE ENTIRE 'PARTS' ARRAY AND MODEL NAME ▼▼▼
     const { history, model: modelName } = JSON.parse(event.body);
     
     if (!history || !Array.isArray(history)) {
@@ -19,16 +19,15 @@ exports.handler = async function(event, context) {
     }
     
     const genAI = new GoogleGenerativeAI(API_KEY);
-    
-    // ▼▼▼ NEW: USE THE DYNAMIC MODEL NAME FROM THE FRONTEND ▼▼▼
-    const model = genAI.getGenerativeModel({ model: modelName || "gemini-1.5-flash" }); // Fallback to flash
+    const model = genAI.getGenerativeModel({ model: modelName || "gemini-1.5-flash" });
 
-    // The user's latest message is the last one in the history array.
-    const latestUserMessage = history.length > 0 ? history.pop().parts[0].text : "";
+    // The user's latest message (which can include text and files) is the last item.
+    const latestMessage = history.pop();
     const chatHistoryForApi = history;
 
     const chat = model.startChat({ history: chatHistoryForApi });
-    const result = await chat.sendMessage(latestUserMessage);
+    // ▼▼▼ SEND THE ENTIRE 'PARTS' ARRAY FROM THE LATEST MESSAGE ▼▼▼
+    const result = await chat.sendMessage(latestMessage.parts);
     const response = result.response;
     
     return {
