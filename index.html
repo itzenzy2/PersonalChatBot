@@ -107,7 +107,6 @@
     </div>
     <div id="chat-area">
         <div id="chat-box">
-            <!-- The initial welcome message is now set by the startNewChat function -->
             <div id="typing-indicator">
                 <span class="typing-dot"></span>
                 <span class="typing-dot"></span>
@@ -293,6 +292,8 @@
             chatHistoryList.appendChild(container);
         });
     }
+    
+    // ▼▼▼ THE CORRECTED FUNCTION ▼▼▼
     function loadChat(chatId) {
         const savedChats = getSavedChats();
         const chatToLoad = savedChats.find(chat => chat.id === chatId);
@@ -300,7 +301,10 @@
             currentChatId = chatToLoad.id;
             conversationHistory = chatToLoad.history;
             removeAttachedFile();
-            chatBox.innerHTML = '';
+            chatBox.innerHTML = ''; // Clear the chatbox
+            // First, put the indicator back
+            chatBox.appendChild(typingIndicator); 
+            // NOW, loop and add the messages before the indicator
             conversationHistory.forEach(message => {
                 const userMessage = message.parts.find(p => p.text);
                 const fileMessage = message.parts.find(p => p.inlineData);
@@ -310,9 +314,10 @@
                 if (userMessage) { displayMessage += userMessage.text; }
                 addMessage(displayMessage, roleClass);
             });
-            chatBox.appendChild(typingIndicator);
         }
     }
+    // ▲▲▲ END OF CORRECTION ▲▲▲
+
     function deleteChat(chatId) {
         if (confirm("Are you sure you want to delete this chat?")) {
             let savedChats = getSavedChats();
@@ -322,19 +327,14 @@
             renderSavedChats();
         }
     }
-    
-    // ▼▼▼ THE CORRECTED FUNCTION ▼▼▼
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
         removeAttachedFile();
-        chatBox.innerHTML = ''; // Clear the chatbox completely
-        // First, put the essential typing indicator back into the cleared chatbox
+        chatBox.innerHTML = '';
         chatBox.appendChild(typingIndicator);
-        // NOW, it's safe to add the welcome message, which will be inserted before the indicator
         addMessage("Hello! How can I help you today?", 'bot-message');
     }
-    // ▲▲▲ END OF CORRECTION ▲▲▲
 </script>
 
 </body>
