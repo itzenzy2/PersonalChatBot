@@ -2,138 +2,195 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Gemini Chatbot</title>
+    <title>Gemini Chatbot - Modern Dark</title>
     <style>
-        /* Basic reset and font styling */
+        /* ---
+        SECTION 1: GLOBAL STYLES & FONT
+        --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f7f7f8;
+            /* A modern, clean font stack */
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* The primary dark background color for the whole app */
+            background-color: #1E1E1E;
+            /* A slightly off-white text color is easier on the eyes than pure white */
+            color: #EAEAEA;
             display: flex;
             height: 100vh;
+            overflow: hidden; /* Prevents the main body from scrolling */
         }
 
-        /* --- Main Layout --- */
+        /* ---
+        SECTION 2: CUSTOM SCROLLBARS (A key modern touch)
+        --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2c2c2c; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+
+        /* ---
+        SECTION 3: MAIN APP LAYOUT
+        --- */
         #app-container { display: flex; width: 100%; height: 100%; }
         #sidebar {
             width: 260px;
-            background-color: #202123;
-            color: white;
+            /* A slightly different dark shade for the sidebar to create depth */
+            background-color: #171717;
             padding: 10px;
             display: flex;
             flex-direction: column;
+            /* A subtle border to separate the panels */
+            border-right: 1px solid #333;
         }
-        .sidebar-btn {
-            border: 1px solid #4d4d4f;
-            border-radius: 5px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-        .sidebar-btn:hover { background-color: #2d2e30; }
-        
-        #chat-history-list { flex-grow: 1; overflow-y: auto; }
-        
-        /* ▼▼▼ NEW CSS FOR THE SAVED CHAT ITEMS WITH DELETE BUTTON ▼▼▼ */
-        .saved-chat-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .saved-chat-container:hover { background-color: #2d2e30; }
-        .saved-chat-title {
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-grow: 1; /* Allows title to take up space */
-        }
-        .delete-chat-btn {
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0 5px;
-        }
-        .delete-chat-btn:hover { color: white; }
-        /* ▲▲▲ END OF NEW CSS ▲▲▲ */
-
         #chat-area {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             height: 100%;
-            background-color: #ffffff;
         }
 
-        /* --- Chat Components --- */
+        /* ---
+        SECTION 4: SIDEBAR ELEMENTS
+        --- */
+        .sidebar-btn {
+            background-color: transparent;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: left; /* Align text to the left for a cleaner look */
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 14px;
+            transition: background-color 0.2s ease; /* Smooth hover effect */
+        }
+        .sidebar-btn:hover { background-color: #2A2A2A; }
+        
+        #chat-history-list { flex-grow: 1; overflow-y: auto; }
+        .saved-chat-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+        .saved-chat-container:hover { background-color: #2A2A2A; }
+        .saved-chat-title {
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+        .delete-chat-btn {
+            background: none;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 5px;
+            transition: color 0.2s ease;
+        }
+        .delete-chat-btn:hover { color: #EAEAEA; }
+
+        /* ---
+        SECTION 5: MAIN CHAT WINDOW
+        --- */
         #chat-box {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 0 20px; /* Remove top/bottom padding to let messages have their own margin */
             display: flex;
             flex-direction: column;
         }
         .message {
-            margin: 10px 0;
-            padding: 12px 18px;
-            border-radius: 20px;
-            line-height: 1.5;
+            margin: 15px 0;
+            padding: 14px 20px;
+            border-radius: 18px;
+            line-height: 1.6;
             max-width: 80%;
             word-wrap: break-word;
         }
-        .user-message { background-color: #007bff; color: white; align-self: flex-end; }
-        .bot-message { background-color: #f1f1f1; color: #333; align-self: flex-start; }
-        #input-container { padding: 20px; border-top: 1px solid #e0e0e0; }
+        .user-message {
+            /* A more sophisticated, modern blue */
+            background-color: #3A76F7;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px; /* A subtle "tail" for the bubble */
+        }
+        .bot-message {
+            /* A classic dark-theme message color */
+            background-color: #343541;
+            color: #EAEAEA;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* ---
+        SECTION 6: INPUT FORM AREA (Key redesign area)
+        --- */
+        #input-container {
+            padding: 24px;
+        }
         #chat-form {
             display: flex;
+            align-items: center;
             max-width: 800px;
             margin: 0 auto;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 5px;
+            /* Use the same color as bot messages for a seamless look */
+            background-color: #343541;
+            border-radius: 12px; /* More rounded corners */
+            padding: 8px 15px;
+            border: 1px solid #444;
         }
-        #user-input { flex-grow: 1; padding: 10px; border: none; outline: none; font-size: 16px; }
-        #chat-form button {
-            width: 40px;
-            height: 40px;
+        #user-input {
+            flex-grow: 1;
             border: none;
-            background-color: #007bff;
-            color: white;
-            border-radius: 5px;
+            outline: none;
+            background-color: transparent;
+            color: #EAEAEA;
+            font-size: 16px;
+        }
+        #user-input::placeholder { color: #777; }
+        #chat-form button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background-color: #555;
+            color: #EAEAEA;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 18px;
+            margin-left: 10px;
+            transition: background-color 0.2s ease;
         }
-        #chat-form button:hover { background-color: #0056b3; }
+        #chat-form button:hover { background-color: #666; }
     </style>
 </head>
 <body>
 
+<!-- The HTML structure remains exactly the same! -->
 <div id="app-container">
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
         <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
-        <hr style="border-color: #4d4d4f; margin: 10px 0;">
+        <hr style="border-color: #333; margin: 10px 0; border-style: solid;">
         <div id="chat-history-list"></div>
     </div>
-
     <div id="chat-area">
         <div id="chat-box">
-            <div class="message bot-message">Welcome! Start a conversation, save it, and manage your chats.</div>
+            <div class="message bot-message">Welcome to your redesigned chatbot.</div>
         </div>
         <div id="input-container">
             <form id="chat-form">
-                <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
-                <button type="submit">➤</button>
+                <input type="text" id="user-input" placeholder="Message Gemini..." autocomplete="off">
+                <button type="submit">↑</button>
             </form>
         </div>
     </div>
 </div>
 
+<!-- The JavaScript logic remains exactly the same! -->
 <script>
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
@@ -141,24 +198,18 @@
     const newChatBtn = document.getElementById('new-chat-btn');
     const saveChatBtn = document.getElementById('save-chat-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
-
     let conversationHistory = [];
     let currentChatId = null;
-
-    // --- EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', renderSavedChats);
     newChatBtn.addEventListener('click', startNewChat);
     saveChatBtn.addEventListener('click', saveCurrentChat);
     chatForm.addEventListener('submit', handleFormSubmit);
-
-    // --- CORE FUNCTIONS ---
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
         chatBox.innerHTML = '';
         addMessage("A new chat has started. What can I help you with?", 'bot-message');
     }
-
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
@@ -185,7 +236,6 @@
             conversationHistory.pop();
         }
     }
-
     function addMessage(text, className) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', className);
@@ -193,12 +243,9 @@
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
-
-    // --- LOCAL STORAGE & SAVING/LOADING/DELETING LOGIC ---
     function getSavedChats() {
         return JSON.parse(localStorage.getItem('gemini-chat-histories')) || [];
     }
-
     function saveCurrentChat() {
         if (conversationHistory.length === 0) {
             alert("Cannot save an empty chat.");
@@ -210,7 +257,7 @@
         if (currentChatId) {
             const chatIndex = savedChats.findIndex(chat => chat.id === currentChatId);
             savedChats[chatIndex].history = conversationHistory;
-            savedChats[chatIndex].title = title; // Also update title in case it changed
+            savedChats[chatIndex].title = title;
         } else {
             currentChatId = Date.now();
             savedChats.push({ id: currentChatId, title: title, history: conversationHistory });
@@ -219,38 +266,28 @@
         alert("Chat saved!");
         renderSavedChats();
     }
-
     function renderSavedChats() {
         const savedChats = getSavedChats();
         chatHistoryList.innerHTML = '';
         savedChats.forEach(chat => {
-            // Create a container for the title and delete button
             const container = document.createElement('div');
             container.classList.add('saved-chat-container');
-
-            // Create the title element
             const titleEl = document.createElement('span');
             titleEl.classList.add('saved-chat-title');
             titleEl.textContent = chat.title;
             titleEl.addEventListener('click', () => loadChat(chat.id));
-            
-            // ▼▼▼ NEW DELETE BUTTON LOGIC ▼▼▼
-            // Create the delete button
             const deleteBtn = document.createElement('button');
             deleteBtn.classList.add('delete-chat-btn');
             deleteBtn.textContent = '🗑️';
             deleteBtn.addEventListener('click', (event) => {
-                event.stopPropagation(); // Prevents the loadChat event from firing
+                event.stopPropagation();
                 deleteChat(chat.id);
             });
-            // ▲▲▲ END OF NEW DELETE BUTTON LOGIC ▲▲▲
-
             container.appendChild(titleEl);
             container.appendChild(deleteBtn);
             chatHistoryList.appendChild(container);
         });
     }
-
     function loadChat(chatId) {
         const savedChats = getSavedChats();
         const chatToLoad = savedChats.find(chat => chat.id === chatId);
@@ -264,25 +301,17 @@
             });
         }
     }
-
-    // ▼▼▼ NEW DELETE CHAT FUNCTION ▼▼▼
     function deleteChat(chatId) {
-        // Ask for confirmation before deleting
         if (confirm("Are you sure you want to delete this chat?")) {
             let savedChats = getSavedChats();
-            // Create a new array excluding the chat to be deleted
             savedChats = savedChats.filter(chat => chat.id !== chatId);
             localStorage.setItem('gemini-chat-histories', JSON.stringify(savedChats));
-            
-            // If the deleted chat is the one currently open, start a new chat
             if (currentChatId === chatId) {
                 startNewChat();
             }
-            
-            renderSavedChats(); // Refresh the sidebar
+            renderSavedChats();
         }
     }
-    // ▲▲▲ END OF NEW DELETE CHAT FUNCTION ▲▲▲
 </script>
 
 </body>
