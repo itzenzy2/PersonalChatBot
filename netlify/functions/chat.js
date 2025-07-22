@@ -10,15 +10,14 @@ exports.handler = async function(event, context) {
   }
   
   try {
-    // Parse the incoming request body
-    const body = JSON.parse(event.body);
-    const userMessage = body.message;
+    // Get the history from the request body
+    const { history } = JSON.parse(event.body);
     
-    // Validate the message
-    if (!userMessage) {
+    // Validate the history
+    if (!history || !Array.isArray(history) || history.length === 0) {
       return { 
         statusCode: 400, 
-        body: JSON.stringify({ error: 'No message provided' }) 
+        body: JSON.stringify({ error: 'No history provided' }) 
       };
     }
     
@@ -31,12 +30,21 @@ exports.handler = async function(event, context) {
       };
     }
     
-    // Initialize the Gemini AI client
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
-    // Generate content from the model
-    const result = await model.generateContent(userMessage);
+
+    // The user's latest message is the last one in the history array.
+    // We separate it from the rest of the history for the API call.
+    const latestUserMessage = history.pop().parts[0].text; // Get the user's prompt text
+    const chatHistoryForApi = history; // The rest of the array is the history
+
+    // Start a chat session with the previous history
+    const chat = model.startChat({
+      history: chatHistoryForApi,
+    });
+
+    // Send the user's new message
+    const result = await chat.sendMessage(latestUserMessage);
     const response = result.response;
     
     // Return successful response
@@ -44,12 +52,11 @@ exports.handler = async function(event, context) {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'  // For CORS support
+        'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({ reply: response.text() })
     };
   } catch (error) {
-    // Handle any errors
     console.error("Function error:", error);
     return { 
       statusCode: 500, 
