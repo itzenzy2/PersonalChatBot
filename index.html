@@ -23,16 +23,30 @@
             display: flex;
             flex-direction: column;
         }
-        #sidebar .new-chat-btn {
+        .sidebar-btn { /* A generic class for our buttons */
             border: 1px solid #4d4d4f;
             border-radius: 5px;
             padding: 10px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Spacing between buttons */
         }
-        #sidebar .new-chat-btn:hover { background-color: #2d2e30; }
-        #sidebar .chat-history { flex-grow: 1; overflow-y: auto; }
+        .sidebar-btn:hover { background-color: #2d2e30; }
+        
+        #chat-history-list { /* The container for our saved chat links */
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .saved-chat-item { /* Styling for each saved chat link */
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .saved-chat-item:hover { background-color: #2d2e30; }
+
         #chat-area {
             flex-grow: 1;
             display: flex;
@@ -86,18 +100,22 @@
 
 <div id="app-container">
     <div id="sidebar">
-        <!-- ▼▼▼ CHANGE 1: ADDED AN ID TO THIS DIV ▼▼▼ -->
-        <div id="new-chat-btn" class="new-chat-btn">
+        <div id="new-chat-btn" class="sidebar-btn">
             + New Chat
         </div>
-        <div class="chat-history">
-            <!-- Saved chats will go here later -->
+        <!-- ▼▼▼ NEW "SAVE CHAT" BUTTON ▼▼▼ -->
+        <div id="save-chat-btn" class="sidebar-btn">
+            💾 Save Current Chat
+        </div>
+        <hr style="border-color: #4d4d4f; margin: 10px 0;">
+        <div id="chat-history-list">
+            <!-- Saved chats will be dynamically added here by JavaScript -->
         </div>
     </div>
 
     <div id="chat-area">
         <div id="chat-box">
-            <div class="message bot-message">Hello! I've been redesigned. How can I help you today?</div>
+            <div class="message bot-message">Welcome! Start a conversation, and save it when you're done.</div>
         </div>
         <div id="input-container">
             <form id="chat-form">
@@ -112,23 +130,40 @@
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
-    // ▼▼▼ CHANGE 2: ADDED THIS NEW SECTION ▼▼▼
     const newChatBtn = document.getElementById('new-chat-btn');
+    // ▼▼▼ NEW ELEMENT REFERENCES ▼▼▼
+    const saveChatBtn = document.getElementById('save-chat-btn');
+    const chatHistoryList = document.getElementById('chat-history-list');
 
     let conversationHistory = [];
+    // A new variable to keep track of the currently loaded chat's ID
+    let currentChatId = null;
 
-    // Event listener for the "New Chat" button
-    newChatBtn.addEventListener('click', () => {
-        // 1. Clear the chat history array
+    // --- EVENT LISTENERS ---
+
+    // On page load, display saved chats
+    document.addEventListener('DOMContentLoaded', renderSavedChats);
+
+    // Listener for the "New Chat" button
+    newChatBtn.addEventListener('click', startNewChat);
+
+    // Listener for the "Save Chat" button
+    saveChatBtn.addEventListener('click', saveCurrentChat);
+
+    // Listener for submitting a message
+    chatForm.addEventListener('submit', handleFormSubmit);
+
+
+    // --- CORE FUNCTIONS ---
+
+    function startNewChat() {
         conversationHistory = [];
-        // 2. Clear the messages from the display
+        currentChatId = null; // This is a new, unsaved chat
         chatBox.innerHTML = '';
-        // 3. Add a new welcome message
         addMessage("A new chat has started. What can I help you with?", 'bot-message');
-    });
-    // ▲▲▲ END OF NEW SECTION ▲▲▲
+    }
 
-    chatForm.addEventListener('submit', async (event) => {
+    async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
         if (messageText === '') return;
@@ -136,10 +171,7 @@
         addMessage(messageText, 'user-message');
         userInput.value = '';
 
-        conversationHistory.push({
-            role: 'user',
-            parts: [{ text: messageText }]
-        });
+        conversationHistory.push({ role: 'user', parts: [{ text: messageText }] });
 
         try {
             const response = await fetch('/.netlify/functions/chat', {
@@ -155,19 +187,14 @@
             
             const data = await response.json();
             const botReply = data.reply;
-
             addMessage(botReply, 'bot-message');
-
-            conversationHistory.push({
-                role: 'model',
-                parts: [{ text: botReply }]
-            });
+            conversationHistory.push({ role: 'model', parts: [{ text: botReply }] });
 
         } catch (error) {
             addMessage(`Sorry, an error occurred: ${error.message}`, 'bot-message');
             conversationHistory.pop();
         }
-    });
+    }
 
     function addMessage(text, className) {
         const messageElement = document.createElement('div');
@@ -175,6 +202,77 @@
         messageElement.textContent = text;
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // --- LOCAL STORAGE & SAVING LOGIC ---
+
+    function getSavedChats() {
+        // Get chats from localStorage, or return an empty array if none exist
+        return JSON.parse(localStorage.getItem('gemini-chat-histories')) || [];
+    }
+
+    function saveCurrentChat() {
+        // Don't save empty chats or chats with only a welcome message
+        if (conversationHistory.length === 0) {
+            alert("Cannot save an empty chat.");
+            return;
+        }
+
+        const savedChats = getSavedChats();
+        
+        // Use the first user message as the title, or a default title
+        const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
+        const title = firstUserMessage ? firstUserMessage.parts[0].text.substring(0, 30) : "New Chat";
+
+        if (currentChatId) {
+            // If we are in a saved chat, update it
+            const chatIndex = savedChats.findIndex(chat => chat.id === currentChatId);
+            savedChats[chatIndex].history = conversationHistory;
+        } else {
+            // Otherwise, create a new saved chat
+            currentChatId = Date.now(); // Use timestamp as a unique ID
+            savedChats.push({
+                id: currentChatId,
+                title: title,
+                history: conversationHistory
+            });
+        }
+
+        // Save the updated array back to localStorage
+        localStorage.setItem('gemini-chat-histories', JSON.stringify(savedChats));
+        alert("Chat saved!");
+        renderSavedChats(); // Update the sidebar display
+    }
+
+    function renderSavedChats() {
+        const savedChats = getSavedChats();
+        chatHistoryList.innerHTML = ''; // Clear the current list
+
+        savedChats.forEach(chat => {
+            const chatItem = document.createElement('div');
+            chatItem.classList.add('saved-chat-item');
+            chatItem.textContent = chat.title;
+            // When a saved chat is clicked, load it
+            chatItem.addEventListener('click', () => loadChat(chat.id));
+            chatHistoryList.appendChild(chatItem);
+        });
+    }
+
+    function loadChat(chatId) {
+        const savedChats = getSavedChats();
+        const chatToLoad = savedChats.find(chat => chat.id === chatId);
+
+        if (chatToLoad) {
+            currentChatId = chatToLoad.id;
+            conversationHistory = chatToLoad.history;
+            
+            // Re-render the chat box with the loaded history
+            chatBox.innerHTML = '';
+            conversationHistory.forEach(message => {
+                const roleClass = message.role === 'user' ? 'user-message' : 'bot-message';
+                addMessage(message.parts[0].text, roleClass);
+            });
+        }
     }
 </script>
 
