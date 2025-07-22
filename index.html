@@ -23,29 +23,44 @@
             display: flex;
             flex-direction: column;
         }
-        .sidebar-btn { /* A generic class for our buttons */
+        .sidebar-btn {
             border: 1px solid #4d4d4f;
             border-radius: 5px;
             padding: 10px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 10px; /* Spacing between buttons */
+            margin-bottom: 10px;
         }
         .sidebar-btn:hover { background-color: #2d2e30; }
         
-        #chat-history-list { /* The container for our saved chat links */
-            flex-grow: 1;
-            overflow-y: auto;
-        }
-        .saved-chat-item { /* Styling for each saved chat link */
+        #chat-history-list { flex-grow: 1; overflow-y: auto; }
+        
+        /* ▼▼▼ NEW CSS FOR THE SAVED CHAT ITEMS WITH DELETE BUTTON ▼▼▼ */
+        .saved-chat-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 10px;
             border-radius: 5px;
+        }
+        .saved-chat-container:hover { background-color: #2d2e30; }
+        .saved-chat-title {
             cursor: pointer;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex-grow: 1; /* Allows title to take up space */
         }
-        .saved-chat-item:hover { background-color: #2d2e30; }
+        .delete-chat-btn {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0 5px;
+        }
+        .delete-chat-btn:hover { color: white; }
+        /* ▲▲▲ END OF NEW CSS ▲▲▲ */
 
         #chat-area {
             flex-grow: 1;
@@ -100,22 +115,15 @@
 
 <div id="app-container">
     <div id="sidebar">
-        <div id="new-chat-btn" class="sidebar-btn">
-            + New Chat
-        </div>
-        <!-- ▼▼▼ NEW "SAVE CHAT" BUTTON ▼▼▼ -->
-        <div id="save-chat-btn" class="sidebar-btn">
-            💾 Save Current Chat
-        </div>
+        <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
+        <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
         <hr style="border-color: #4d4d4f; margin: 10px 0;">
-        <div id="chat-history-list">
-            <!-- Saved chats will be dynamically added here by JavaScript -->
-        </div>
+        <div id="chat-history-list"></div>
     </div>
 
     <div id="chat-area">
         <div id="chat-box">
-            <div class="message bot-message">Welcome! Start a conversation, and save it when you're done.</div>
+            <div class="message bot-message">Welcome! Start a conversation, save it, and manage your chats.</div>
         </div>
         <div id="input-container">
             <form id="chat-form">
@@ -131,34 +139,22 @@
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const newChatBtn = document.getElementById('new-chat-btn');
-    // ▼▼▼ NEW ELEMENT REFERENCES ▼▼▼
     const saveChatBtn = document.getElementById('save-chat-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
 
     let conversationHistory = [];
-    // A new variable to keep track of the currently loaded chat's ID
     let currentChatId = null;
 
     // --- EVENT LISTENERS ---
-
-    // On page load, display saved chats
     document.addEventListener('DOMContentLoaded', renderSavedChats);
-
-    // Listener for the "New Chat" button
     newChatBtn.addEventListener('click', startNewChat);
-
-    // Listener for the "Save Chat" button
     saveChatBtn.addEventListener('click', saveCurrentChat);
-
-    // Listener for submitting a message
     chatForm.addEventListener('submit', handleFormSubmit);
 
-
     // --- CORE FUNCTIONS ---
-
     function startNewChat() {
         conversationHistory = [];
-        currentChatId = null; // This is a new, unsaved chat
+        currentChatId = null;
         chatBox.innerHTML = '';
         addMessage("A new chat has started. What can I help you with?", 'bot-message');
     }
@@ -167,29 +163,23 @@
         event.preventDefault();
         const messageText = userInput.value.trim();
         if (messageText === '') return;
-
         addMessage(messageText, 'user-message');
         userInput.value = '';
-
         conversationHistory.push({ role: 'user', parts: [{ text: messageText }] });
-
         try {
             const response = await fetch('/.netlify/functions/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ history: JSON.parse(JSON.stringify(conversationHistory)) })
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Something went wrong.');
             }
-            
             const data = await response.json();
             const botReply = data.reply;
             addMessage(botReply, 'bot-message');
             conversationHistory.push({ role: 'model', parts: [{ text: botReply }] });
-
         } catch (error) {
             addMessage(`Sorry, an error occurred: ${error.message}`, 'bot-message');
             conversationHistory.pop();
@@ -204,69 +194,69 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- LOCAL STORAGE & SAVING LOGIC ---
-
+    // --- LOCAL STORAGE & SAVING/LOADING/DELETING LOGIC ---
     function getSavedChats() {
-        // Get chats from localStorage, or return an empty array if none exist
         return JSON.parse(localStorage.getItem('gemini-chat-histories')) || [];
     }
 
     function saveCurrentChat() {
-        // Don't save empty chats or chats with only a welcome message
         if (conversationHistory.length === 0) {
             alert("Cannot save an empty chat.");
             return;
         }
-
         const savedChats = getSavedChats();
-        
-        // Use the first user message as the title, or a default title
         const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
         const title = firstUserMessage ? firstUserMessage.parts[0].text.substring(0, 30) : "New Chat";
-
         if (currentChatId) {
-            // If we are in a saved chat, update it
             const chatIndex = savedChats.findIndex(chat => chat.id === currentChatId);
             savedChats[chatIndex].history = conversationHistory;
+            savedChats[chatIndex].title = title; // Also update title in case it changed
         } else {
-            // Otherwise, create a new saved chat
-            currentChatId = Date.now(); // Use timestamp as a unique ID
-            savedChats.push({
-                id: currentChatId,
-                title: title,
-                history: conversationHistory
-            });
+            currentChatId = Date.now();
+            savedChats.push({ id: currentChatId, title: title, history: conversationHistory });
         }
-
-        // Save the updated array back to localStorage
         localStorage.setItem('gemini-chat-histories', JSON.stringify(savedChats));
         alert("Chat saved!");
-        renderSavedChats(); // Update the sidebar display
+        renderSavedChats();
     }
 
     function renderSavedChats() {
         const savedChats = getSavedChats();
-        chatHistoryList.innerHTML = ''; // Clear the current list
-
+        chatHistoryList.innerHTML = '';
         savedChats.forEach(chat => {
-            const chatItem = document.createElement('div');
-            chatItem.classList.add('saved-chat-item');
-            chatItem.textContent = chat.title;
-            // When a saved chat is clicked, load it
-            chatItem.addEventListener('click', () => loadChat(chat.id));
-            chatHistoryList.appendChild(chatItem);
+            // Create a container for the title and delete button
+            const container = document.createElement('div');
+            container.classList.add('saved-chat-container');
+
+            // Create the title element
+            const titleEl = document.createElement('span');
+            titleEl.classList.add('saved-chat-title');
+            titleEl.textContent = chat.title;
+            titleEl.addEventListener('click', () => loadChat(chat.id));
+            
+            // ▼▼▼ NEW DELETE BUTTON LOGIC ▼▼▼
+            // Create the delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.classList.add('delete-chat-btn');
+            deleteBtn.textContent = '🗑️';
+            deleteBtn.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevents the loadChat event from firing
+                deleteChat(chat.id);
+            });
+            // ▲▲▲ END OF NEW DELETE BUTTON LOGIC ▲▲▲
+
+            container.appendChild(titleEl);
+            container.appendChild(deleteBtn);
+            chatHistoryList.appendChild(container);
         });
     }
 
     function loadChat(chatId) {
         const savedChats = getSavedChats();
         const chatToLoad = savedChats.find(chat => chat.id === chatId);
-
         if (chatToLoad) {
             currentChatId = chatToLoad.id;
             conversationHistory = chatToLoad.history;
-            
-            // Re-render the chat box with the loaded history
             chatBox.innerHTML = '';
             conversationHistory.forEach(message => {
                 const roleClass = message.role === 'user' ? 'user-message' : 'bot-message';
@@ -274,6 +264,25 @@
             });
         }
     }
+
+    // ▼▼▼ NEW DELETE CHAT FUNCTION ▼▼▼
+    function deleteChat(chatId) {
+        // Ask for confirmation before deleting
+        if (confirm("Are you sure you want to delete this chat?")) {
+            let savedChats = getSavedChats();
+            // Create a new array excluding the chat to be deleted
+            savedChats = savedChats.filter(chat => chat.id !== chatId);
+            localStorage.setItem('gemini-chat-histories', JSON.stringify(savedChats));
+            
+            // If the deleted chat is the one currently open, start a new chat
+            if (currentChatId === chatId) {
+                startNewChat();
+            }
+            
+            renderSavedChats(); // Refresh the sidebar
+        }
+    }
+    // ▲▲▲ END OF NEW DELETE CHAT FUNCTION ▲▲▲
 </script>
 
 </body>
