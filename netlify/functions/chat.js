@@ -4,7 +4,7 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
   }
-
+  
   try {
     const { history, model: modelName } = JSON.parse(event.body);
     
@@ -25,27 +25,16 @@ exports.handler = async function(event, context) {
 
     const chat = model.startChat({ history: chatHistoryForApi });
     
-    // ▼▼▼ CORE CHANGE: USE generateContentStream ▼▼▼
-    const result = await chat.sendMessageStream(latestMessage.parts);
-
-    // Use a modern ReadableStream to pipe the response
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        for await (const chunk of result.stream) {
-          const text = chunk.text();
-          // Enqueue the text chunk, encoded as UTF-8
-          controller.enqueue(encoder.encode(text));
-        }
-        controller.close();
-      }
-    });
-
-    // Return the stream directly
-    return new Response(stream, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" }
-    });
-
+    // ▼▼▼ REVERTED TO THE STABLE, NON-STREAMING CALL ▼▼▼
+    const result = await chat.sendMessage(latestMessage.parts);
+    const response = result.response;
+    
+    // ▼▼▼ REVERTED TO RETURNING A SIMPLE JSON OBJECT ▼▼▼
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ reply: response.text() })
+    };
   } catch (error) {
     console.error("Function error:", error);
     return { 
