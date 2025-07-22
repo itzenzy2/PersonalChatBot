@@ -110,7 +110,6 @@
     fileInput.addEventListener('change', handleFileSelect);
     removeFileBtn.addEventListener('click', removeAttachedFile);
 
-    // ▼▼▼ CHANGE 1: `addMessage` now returns the created element ▼▼▼
     function addMessage(text, className) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', className);
@@ -122,10 +121,9 @@
         }
         chatBox.insertBefore(messageElement, typingIndicator);
         chatBox.scrollTop = chatBox.scrollHeight;
-        return messageElement; // Return the element so we can update it
+        return messageElement;
     }
 
-    // ▼▼▼ CHANGE 2: The `handleFormSubmit` function is completely rewritten for streaming ▼▼▼
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
@@ -144,9 +142,8 @@
         userInput.value = '';
         removeAttachedFile();
 
-        // Create an empty message bubble for the bot that we will fill
         const botMessageElement = addMessage('', 'bot-message');
-        let botReply = ''; // A variable to build the full response text
+        let botReply = '';
 
         try {
             const selectedModel = modelSelector.value;
@@ -159,32 +156,32 @@
                 })
             });
 
+            // ▼▼▼ THE FIX IS HERE ▼▼▼
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Something went wrong.');
+                // Instead of response.json(), read the error as plain text.
+                // This will handle both our custom JSON errors and platform errors.
+                const errorText = await response.text();
+                throw new Error(errorText || 'An unknown error occurred on the server.');
             }
+            // ▲▲▲ END OF FIX ▲▲▲
 
-            // Start reading the stream from the response
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
 
             while (true) {
                 const { value, done } = await reader.read();
-                if (done) break; // The stream is finished
-
-                // Append the new chunk of text to our full response
+                if (done) break;
                 botReply += decoder.decode(value, { stream: true });
-                // Update the bot's message bubble with the rendered Markdown
                 botMessageElement.innerHTML = marked.parse(botReply);
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
 
-            // Add the final, complete response to the history for the next turn
             conversationHistory.push({ role: 'model', parts: [{ text: botReply }] });
 
         } catch (error) {
+            // Now this will display the *actual* error message from the server.
             botMessageElement.textContent = `Sorry, an error occurred: ${error.message}`;
-            conversationHistory.pop(); // Remove the user's message from history on failure
+            conversationHistory.pop();
         }
     }
 
