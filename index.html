@@ -152,7 +152,7 @@
 
     // All event listeners are the same
     document.addEventListener('DOMContentLoaded', () => {
-        startNewChat(); // Call startNewChat on page load
+        startNewChat();
         renderSavedChats();
     });
     newChatBtn.addEventListener('click', startNewChat);
@@ -323,17 +323,18 @@
         }
     }
     
-    // ▼▼▼ THE ONLY CHANGE IS HERE ▼▼▼
+    // ▼▼▼ THE CORRECTED FUNCTION ▼▼▼
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
         removeAttachedFile();
-        chatBox.innerHTML = ''; // Clear the chatbox completely first
-        // Add the new, simpler welcome message
+        chatBox.innerHTML = ''; // Clear the chatbox completely
+        // First, put the essential typing indicator back into the cleared chatbox
+        chatBox.appendChild(typingIndicator);
+        // NOW, it's safe to add the welcome message, which will be inserted before the indicator
         addMessage("Hello! How can I help you today?", 'bot-message');
-        chatBox.appendChild(typingIndicator); // Re-add the indicator
     }
-    // ▲▲▲ END OF CHANGE ▲▲▲
+    // ▲▲▲ END OF CORRECTION ▲▲▲
 </script>
 
 </body>
