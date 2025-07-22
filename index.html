@@ -14,14 +14,7 @@
         }
 
         /* --- Main Layout --- */
-        /* The main container for the two-column layout */
-        #app-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* The left sidebar */
+        #app-container { display: flex; width: 100%; height: 100%; }
         #sidebar {
             width: 260px;
             background-color: #202123;
@@ -38,17 +31,10 @@
             cursor: pointer;
             margin-bottom: 20px;
         }
-        #sidebar .new-chat-btn:hover {
-            background-color: #2d2e30;
-        }
-        #sidebar .chat-history {
-            flex-grow: 1; /* Takes up remaining space */
-            overflow-y: auto; /* For when we have many saved chats */
-        }
-
-        /* The main chat area on the right */
+        #sidebar .new-chat-btn:hover { background-color: #2d2e30; }
+        #sidebar .chat-history { flex-grow: 1; overflow-y: auto; }
         #chat-area {
-            flex-grow: 1; /* Let the chat area take up the rest of the space */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -56,7 +42,6 @@
         }
 
         /* --- Chat Components --- */
-        /* The box where messages appear */
         #chat-box {
             flex-grow: 1;
             overflow-y: auto;
@@ -72,22 +57,9 @@
             max-width: 80%;
             word-wrap: break-word;
         }
-        .user-message {
-            background-color: #007bff;
-            color: white;
-            align-self: flex-end;
-        }
-        .bot-message {
-            background-color: #f1f1f1;
-            color: #333;
-            align-self: flex-start;
-        }
-
-        /* The container for the input form at the bottom */
-        #input-container {
-            padding: 20px;
-            border-top: 1px solid #e0e0e0;
-        }
+        .user-message { background-color: #007bff; color: white; align-self: flex-end; }
+        .bot-message { background-color: #f1f1f1; color: #333; align-self: flex-start; }
+        #input-container { padding: 20px; border-top: 1px solid #e0e0e0; }
         #chat-form {
             display: flex;
             max-width: 800px;
@@ -96,13 +68,7 @@
             border-radius: 8px;
             padding: 5px;
         }
-        #user-input {
-            flex-grow: 1;
-            padding: 10px;
-            border: none;
-            outline: none; /* Remove the blue outline on focus */
-            font-size: 16px;
-        }
+        #user-input { flex-grow: 1; padding: 10px; border: none; outline: none; font-size: 16px; }
         #chat-form button {
             width: 40px;
             height: 40px;
@@ -113,17 +79,15 @@
             cursor: pointer;
             font-size: 18px;
         }
-        #chat-form button:hover {
-            background-color: #0056b3;
-        }
+        #chat-form button:hover { background-color: #0056b3; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <!-- The new sidebar on the left -->
     <div id="sidebar">
-        <div class="new-chat-btn">
+        <!-- ▼▼▼ CHANGE 1: ADDED AN ID TO THIS DIV ▼▼▼ -->
+        <div id="new-chat-btn" class="new-chat-btn">
             + New Chat
         </div>
         <div class="chat-history">
@@ -131,7 +95,6 @@
         </div>
     </div>
 
-    <!-- The main chat area on the right -->
     <div id="chat-area">
         <div id="chat-box">
             <div class="message bot-message">Hello! I've been redesigned. How can I help you today?</div>
@@ -146,12 +109,24 @@
 </div>
 
 <script>
-    // The JavaScript logic remains the same, just targeting the new elements.
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
+    // ▼▼▼ CHANGE 2: ADDED THIS NEW SECTION ▼▼▼
+    const newChatBtn = document.getElementById('new-chat-btn');
 
     let conversationHistory = [];
+
+    // Event listener for the "New Chat" button
+    newChatBtn.addEventListener('click', () => {
+        // 1. Clear the chat history array
+        conversationHistory = [];
+        // 2. Clear the messages from the display
+        chatBox.innerHTML = '';
+        // 3. Add a new welcome message
+        addMessage("A new chat has started. What can I help you with?", 'bot-message');
+    });
+    // ▲▲▲ END OF NEW SECTION ▲▲▲
 
     chatForm.addEventListener('submit', async (event) => {
         event.preventDefault();
