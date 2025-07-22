@@ -4,52 +4,20 @@
     <meta charset="UTF-8">
     <title>Gemini Chatbot - Modern Dark</title>
     <style>
-        /* All CSS remains the same */
+        /* All previous CSS remains the same, with new additions */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #1E1E1E;
-            color: #EAEAEA;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+        body { font-family: "Inter", sans-serif; background-color: #1E1E1E; color: #EAEAEA; display: flex; height: 100vh; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #2c2c2c; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #666; }
         #app-container { display: flex; width: 100%; height: 100%; }
-        #sidebar {
-            width: 260px;
-            background-color: #171717;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #333;
-        }
+        #sidebar { width: 260px; background-color: #171717; padding: 10px; display: flex; flex-direction: column; border-right: 1px solid #333; }
         #chat-area { flex-grow: 1; display: flex; flex-direction: column; height: 100%; }
-        .sidebar-btn {
-            background-color: transparent;
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: left;
-            cursor: pointer;
-            margin-bottom: 10px;
-            font-size: 14px;
-            color: #EAEAEA;
-            transition: background-color 0.2s ease;
-        }
+        .sidebar-btn { background: transparent; border: 1px solid #444; border-radius: 8px; padding: 12px; text-align: left; cursor: pointer; margin-bottom: 10px; font-size: 14px; color: #EAEAEA; transition: background-color 0.2s ease; }
         .sidebar-btn:hover { background-color: #2A2A2A; }
         #chat-history-list { flex-grow: 1; overflow-y: auto; }
-        .saved-chat-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border-radius: 8px;
-            transition: background-color 0.2s ease;
-        }
+        .saved-chat-container { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; transition: background-color 0.2s ease; }
         .saved-chat-container:hover { background-color: #2A2A2A; }
         .saved-chat-title { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
         .delete-chat-btn { background: none; border: none; color: #777; cursor: pointer; font-size: 16px; padding: 0 5px; transition: color 0.2s ease; }
@@ -58,93 +26,65 @@
         .message { margin: 15px 0; padding: 14px 20px; border-radius: 18px; line-height: 1.6; max-width: 80%; word-wrap: break-word; }
         .user-message { background-color: #3A76F7; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .bot-message { background-color: #343541; color: #EAEAEA; align-self: flex-start; border-bottom-left-radius: 4px; }
-        #typing-indicator {
-            display: none;
-            align-items: center;
-            margin: 15px 0;
-            padding: 14px 20px;
-            border-radius: 18px;
-            background-color: #343541;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            margin: 0 2px;
-            background-color: #777;
-            border-radius: 50%;
-            animation: typing-pulse 1.4s infinite ease-in-out both;
-        }
+        #typing-indicator { display: none; align-items: center; margin: 15px 0; padding: 14px 20px; border-radius: 18px; background-color: #343541; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .typing-dot { width: 8px; height: 8px; margin: 0 2px; background-color: #777; border-radius: 50%; animation: typing-pulse 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typing-pulse {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-        #input-container { padding: 24px; }
-        #chat-form {
-            display: flex;
-            align-items: center;
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #343541;
-            border-radius: 12px;
-            padding: 8px 15px;
-            border: 1px solid #444;
-        }
+        @keyframes typing-pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        #input-container { padding: 24px; padding-top: 12px; } /* Reduced top padding */
+        #chat-form { display: flex; align-items: center; max-width: 800px; margin: 0 auto; background-color: #343541; border-radius: 12px; padding: 8px 15px; border: 1px solid #444; }
         #user-input { flex-grow: 1; border: none; outline: none; background-color: transparent; color: #EAEAEA; font-size: 16px; }
         #user-input::placeholder { color: #777; }
-        #model-selector {
-            background-color: #444;
-            color: #EAEAEA;
-            border: none;
-            border-radius: 5px;
-            padding: 8px;
-            margin-left: 10px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-        #chat-form button {
-            width: 32px;
-            height: 32px;
-            border: none;
-            background-color: #555;
-            color: #EAEAEA;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            margin-left: 10px;
-            transition: background-color 0.2s ease;
-        }
+        #model-selector { background-color: #444; color: #EAEAEA; border: none; border-radius: 5px; padding: 8px; margin-left: 10px; font-family: inherit; cursor: pointer; }
+        #chat-form button { width: 32px; height: 32px; border: none; background-color: #555; color: #EAEAEA; border-radius: 8px; cursor: pointer; font-size: 18px; margin-left: 10px; transition: background-color 0.2s ease; }
         #chat-form button:hover { background-color: #666; }
+
+        /* ▼▼▼ NEW CSS FOR FILE UPLOAD ▼▼▼ */
+        #file-upload-btn {
+            background: none; border: none; color: #999; font-size: 20px;
+            cursor: pointer; padding: 5px; margin-right: 10px;
+        }
+        #file-upload-btn:hover { color: #EAEAEA; }
+        #file-attachment-preview {
+            max-width: 800px; margin: 0 auto; padding: 0 10px;
+            display: none; /* Hidden by default */
+            align-items: center;
+            font-size: 12px; color: #999;
+        }
+        #file-attachment-preview span {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            background-color: #2A2A2A; padding: 3px 8px; border-radius: 5px;
+        }
+        #remove-file-btn {
+            background: none; border: none; color: #999; cursor: pointer;
+            font-size: 16px; margin-left: 8px;
+        }
+        /* ▲▲▲ END OF NEW CSS ▲▲▲ */
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="sidebar">
-        <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
-        <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
-        <hr style="border-color: #333; margin: 10px 0; border-style: solid;">
-        <div id="chat-history-list"></div>
-    </div>
+    <div id="sidebar"><!-- Sidebar HTML is unchanged --></div>
     <div id="chat-area">
         <div id="chat-box">
-            <div class="message bot-message">Welcome! Select a model and start chatting.</div>
-            <div id="typing-indicator">
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-            </div>
+            <div class="message bot-message">Welcome! You can now attach files.</div>
+            <div id="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
         </div>
         <div id="input-container">
+            <!-- ▼▼▼ NEW: FILE PREVIEW AREA ▼▼▼ -->
+            <div id="file-attachment-preview">
+                <span>File Name Will Go Here</span>
+                <button id="remove-file-btn">×</button>
+            </div>
             <form id="chat-form">
+                <!-- ▼▼▼ NEW: FILE UPLOAD BUTTONS ▼▼▼ -->
+                <input type="file" id="file-input" hidden />
+                <button type="button" id="file-upload-btn">📎</button>
                 <input type="text" id="user-input" placeholder="Message Gemini..." autocomplete="off">
                 <select id="model-selector">
                     <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                    <!-- ▼▼▼ THE ONLY CHANGE IS ADDING "selected" TO THIS LINE ▼▼▼ -->
                     <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash</option>
                 </select>
                 <button type="submit">↑</button>
@@ -154,7 +94,7 @@
 </div>
 
 <script>
-    // All JavaScript remains the same
+    // --- ELEMENT REFERENCES ---
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
@@ -163,27 +103,69 @@
     const chatHistoryList = document.getElementById('chat-history-list');
     const modelSelector = document.getElementById('model-selector');
     const typingIndicator = document.getElementById('typing-indicator');
+    // ▼▼▼ NEW: FILE UPLOAD REFERENCES ▼▼▼
+    const fileUploadBtn = document.getElementById('file-upload-btn');
+    const fileInput = document.getElementById('file-input');
+    const filePreview = document.getElementById('file-attachment-preview');
+    const filePreviewName = filePreview.querySelector('span');
+    const removeFileBtn = document.getElementById('remove-file-btn');
+
+    // --- STATE VARIABLES ---
     let conversationHistory = [];
     let currentChatId = null;
+    // ▼▼▼ NEW: STATE FOR ATTACHED FILE ▼▼▼
+    let attachedFile = null;
+
+    // --- EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', renderSavedChats);
     newChatBtn.addEventListener('click', startNewChat);
     saveChatBtn.addEventListener('click', saveCurrentChat);
     chatForm.addEventListener('submit', handleFormSubmit);
+    // ▼▼▼ NEW: FILE UPLOAD LISTENERS ▼▼▼
+    fileUploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', handleFileSelect);
+    removeFileBtn.addEventListener('click', removeAttachedFile);
+
+    // --- CORE FUNCTIONS ---
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
-        chatBox.innerHTML = '<div class="message bot-message">Welcome! Select a model and start chatting.</div>';
+        removeAttachedFile(); // Also clear any attached file
+        chatBox.innerHTML = '<div class="message bot-message">Welcome! You can now attach files.</div>';
         chatBox.appendChild(typingIndicator);
     }
+
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
-        if (messageText === '') return;
-        addMessage(messageText, 'user-message');
+        // Allow sending a message with only a file attached
+        if (messageText === '' && !attachedFile) return;
+
+        // ▼▼▼ NEW: CONSTRUCT THE 'PARTS' ARRAY FOR MULTIMODAL INPUT ▼▼▼
+        const userParts = [];
+        if (attachedFile) {
+            userParts.push({
+                inlineData: {
+                    mimeType: attachedFile.type,
+                    data: attachedFile.data
+                }
+            });
+            addMessage(`[File: ${attachedFile.name}]`, 'user-message');
+        }
+        if (messageText) {
+            userParts.push({ text: messageText });
+            if (!attachedFile) { // Only add text bubble if no file
+                 addMessage(messageText, 'user-message');
+            }
+        }
+        
+        conversationHistory.push({ role: 'user', parts: userParts });
         userInput.value = '';
-        conversationHistory.push({ role: 'user', parts: [{ text: messageText }] });
+        removeAttachedFile(); // Clear file after sending
+
         typingIndicator.style.display = 'flex';
         chatBox.scrollTop = chatBox.scrollHeight;
+
         try {
             const selectedModel = modelSelector.value;
             const response = await fetch('/.netlify/functions/chat', {
@@ -209,6 +191,35 @@
             conversationHistory.pop();
         }
     }
+
+    // ▼▼▼ NEW: FILE HANDLING FUNCTIONS ▼▼▼
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            // The result is a data URL, we need to extract the base64 part
+            const base64Data = reader.result.split(',')[1];
+            attachedFile = {
+                name: file.name,
+                type: file.type,
+                data: base64Data
+            };
+            // Show the preview
+            filePreviewName.textContent = file.name;
+            filePreview.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeAttachedFile() {
+        attachedFile = null;
+        fileInput.value = ''; // Reset the file input
+        filePreview.style.display = 'none';
+    }
+    // ▲▲▲ END OF NEW FILE FUNCTIONS ▲▲▲
+
     function addMessage(text, className) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', className);
@@ -216,12 +227,26 @@
         chatBox.insertBefore(messageElement, typingIndicator);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    // --- All other functions (getSavedChats, saveCurrentChat, etc.) remain the same ---
+    // [Self-correction: The sidebar HTML was removed in the previous response, adding it back]
+    document.getElementById('sidebar').innerHTML = `
+        <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
+        <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
+        <hr style="border-color: #333; margin: 10px 0; border-style: solid;">
+        <div id="chat-history-list"></div>
+    `;
+    // Re-add event listeners after regenerating sidebar
+    document.getElementById('new-chat-btn').addEventListener('click', startNewChat);
+    document.getElementById('save-chat-btn').addEventListener('click', saveCurrentChat);
+    // [Self-correction complete]
+
     function getSavedChats() { return JSON.parse(localStorage.getItem('gemini-chat-histories')) || []; }
     function saveCurrentChat() {
         if (conversationHistory.length === 0) { alert("Cannot save an empty chat."); return; }
         const savedChats = getSavedChats();
         const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
-        const title = firstUserMessage ? firstUserMessage.parts[0].text.substring(0, 30) : "New Chat";
+        const title = firstUserMessage ? (firstUserMessage.parts.find(p => p.text) || {text: "Chat with file"}).text.substring(0, 30) : "New Chat";
         if (currentChatId) {
             const chatIndex = savedChats.findIndex(chat => chat.id === currentChatId);
             savedChats[chatIndex].history = conversationHistory;
@@ -236,6 +261,7 @@
     }
     function renderSavedChats() {
         const savedChats = getSavedChats();
+        const chatHistoryList = document.getElementById('chat-history-list');
         chatHistoryList.innerHTML = '';
         savedChats.forEach(chat => {
             const container = document.createElement('div');
@@ -259,10 +285,18 @@
         if (chatToLoad) {
             currentChatId = chatToLoad.id;
             conversationHistory = chatToLoad.history;
+            removeAttachedFile();
             chatBox.innerHTML = '';
             conversationHistory.forEach(message => {
+                const userMessage = message.parts.find(p => p.text);
+                const fileMessage = message.parts.find(p => p.inlineData);
                 const roleClass = message.role === 'user' ? 'user-message' : 'bot-message';
-                addMessage(message.parts[0].text, roleClass);
+                if (fileMessage) {
+                    addMessage(`[File Attached]`, roleClass);
+                }
+                if (userMessage) {
+                    addMessage(userMessage.text, roleClass);
+                }
             });
             chatBox.appendChild(typingIndicator);
         }
