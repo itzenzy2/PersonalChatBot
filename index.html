@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Gemini Chatbot - Modern Dark</title>
+    
+    <!-- ▼▼▼ CHANGE 1: ADD THE MARKED.JS LIBRARY ▼▼▼ -->
+    <!-- This script gives us the `marked.parse()` function -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <style>
-        /* All CSS is correct and remains the same */
+        /* All CSS remains exactly the same */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: "Inter", sans-serif; background-color: #1E1E1E; color: #EAEAEA; display: flex; height: 100vh; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; }
@@ -26,6 +31,11 @@
         .message { margin: 15px 0; padding: 14px 20px; border-radius: 18px; line-height: 1.6; max-width: 80%; word-wrap: break-word; }
         .user-message { background-color: #3A76F7; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .bot-message { background-color: #343541; color: #EAEAEA; align-self: flex-start; border-bottom-left-radius: 4px; }
+        /* Add some basic styling for rendered HTML from Markdown */
+        .bot-message p { margin: 0; }
+        .bot-message ul, .bot-message ol { padding-left: 20px; }
+        .bot-message pre { background-color: #1E1E1E; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; }
+        .bot-message code { font-family: "Courier New", Courier, monospace; }
         #typing-indicator { display: none; align-items: center; margin: 15px 0; padding: 14px 20px; border-radius: 18px; background-color: #343541; align-self: flex-start; border-bottom-left-radius: 4px; }
         .typing-dot { width: 8px; height: 8px; margin: 0 2px; background-color: #777; border-radius: 50%; animation: typing-pulse 1.4s infinite ease-in-out both; }
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
@@ -47,8 +57,8 @@
 </head>
 <body>
 
+<!-- The HTML structure remains exactly the same -->
 <div id="app-container">
-    <!-- ▼▼▼ THE FIX: The sidebar HTML is now correctly placed here ▼▼▼ -->
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
         <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
@@ -57,7 +67,7 @@
     </div>
     <div id="chat-area">
         <div id="chat-box">
-            <div class="message bot-message">Welcome! You can now attach files.</div>
+            <div class="message bot-message">Welcome! I can now render **Markdown** for better formatting.</div>
             <div id="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
         </div>
         <div id="input-container">
@@ -81,8 +91,7 @@
 </div>
 
 <script>
-    // --- ELEMENT REFERENCES ---
-    // Now these will all find their elements correctly when the page loads.
+    // All element references and state variables remain the same
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
@@ -96,13 +105,11 @@
     const filePreview = document.getElementById('file-attachment-preview');
     const filePreviewName = filePreview.querySelector('span');
     const removeFileBtn = document.getElementById('remove-file-btn');
-
-    // --- STATE VARIABLES ---
     let conversationHistory = [];
     let currentChatId = null;
     let attachedFile = null;
 
-    // --- EVENT LISTENERS ---
+    // All event listeners remain the same
     document.addEventListener('DOMContentLoaded', renderSavedChats);
     newChatBtn.addEventListener('click', startNewChat);
     saveChatBtn.addEventListener('click', saveCurrentChat);
@@ -111,55 +118,60 @@
     fileInput.addEventListener('change', handleFileSelect);
     removeFileBtn.addEventListener('click', removeAttachedFile);
 
-    // --- CORE FUNCTIONS ---
+    // ▼▼▼ CHANGE 2: UPDATE THE `addMessage` FUNCTION ▼▼▼
+    function addMessage(text, className) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', className);
+
+        if (className === 'bot-message') {
+            // If the message is from the bot, parse it as Markdown
+            // This converts **bold**, *italics*, lists, etc., into HTML
+            messageElement.innerHTML = marked.parse(text);
+        } else {
+            // If the message is from the user, treat it as plain text for security
+            messageElement.textContent = text;
+        }
+        
+        // The rest of the function is the same
+        chatBox.insertBefore(messageElement, typingIndicator);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    // ▲▲▲ END OF UPDATED FUNCTION ▲▲▲
+
+    // All other functions remain exactly the same
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
         removeAttachedFile();
-        chatBox.innerHTML = '<div class="message bot-message">Welcome! You can now attach files.</div>';
+        chatBox.innerHTML = '<div class="message bot-message">Welcome! I can now render **Markdown** for better formatting.</div>';
         chatBox.appendChild(typingIndicator);
     }
-
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
         if (messageText === '' && !attachedFile) return;
-
         const userParts = [];
-        let displayMessage = messageText; // The text to display in the chat bubble
-
+        let displayMessage = messageText;
         if (attachedFile) {
             userParts.push({ inlineData: { mimeType: attachedFile.type, data: attachedFile.data } });
-            // Create a display message that includes the file name
             displayMessage = `[File: ${attachedFile.name}]` + (messageText ? `\n\n${messageText}` : '');
         }
-        if (messageText) {
-            userParts.push({ text: messageText });
-        }
-        
+        if (messageText) { userParts.push({ text: messageText }); }
         addMessage(displayMessage, 'user-message');
         conversationHistory.push({ role: 'user', parts: userParts });
         userInput.value = '';
         removeAttachedFile();
-
         typingIndicator.style.display = 'flex';
         chatBox.scrollTop = chatBox.scrollHeight;
-
         try {
             const selectedModel = modelSelector.value;
             const response = await fetch('/.netlify/functions/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    history: JSON.parse(JSON.stringify(conversationHistory)),
-                    model: selectedModel 
-                })
+                body: JSON.stringify({ history: JSON.parse(JSON.stringify(conversationHistory)), model: selectedModel })
             });
             typingIndicator.style.display = 'none';
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Something went wrong.');
-            }
+            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Something went wrong.'); }
             const data = await response.json();
             const botReply = data.reply;
             addMessage(botReply, 'bot-message');
@@ -170,7 +182,6 @@
             conversationHistory.pop();
         }
     }
-
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -183,23 +194,11 @@
         };
         reader.readAsDataURL(file);
     }
-
     function removeAttachedFile() {
         attachedFile = null;
         fileInput.value = '';
         filePreview.style.display = 'none';
     }
-
-    function addMessage(text, className) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', className);
-        messageElement.style.whiteSpace = 'pre-wrap'; // Allows line breaks to be rendered
-        messageElement.textContent = text;
-        chatBox.insertBefore(messageElement, typingIndicator);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // --- All other functions (getSavedChats, saveCurrentChat, etc.) remain the same ---
     function getSavedChats() { return JSON.parse(localStorage.getItem('gemini-chat-histories')) || []; }
     function saveCurrentChat() {
         if (conversationHistory.length === 0) { alert("Cannot save an empty chat."); return; }
