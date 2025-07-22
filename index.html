@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Gemini Chatbot - Modern Dark</title>
     <style>
-        /* All previous CSS remains the same, with new additions */
+        /* All CSS is correct and remains the same */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: "Inter", sans-serif; background-color: #1E1E1E; color: #EAEAEA; display: flex; height: 100vh; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; }
@@ -31,54 +31,41 @@
         .typing-dot:nth-child(1) { animation-delay: -0.32s; }
         .typing-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typing-pulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
-        #input-container { padding: 24px; padding-top: 12px; } /* Reduced top padding */
+        #input-container { padding: 24px; padding-top: 12px; }
         #chat-form { display: flex; align-items: center; max-width: 800px; margin: 0 auto; background-color: #343541; border-radius: 12px; padding: 8px 15px; border: 1px solid #444; }
         #user-input { flex-grow: 1; border: none; outline: none; background-color: transparent; color: #EAEAEA; font-size: 16px; }
         #user-input::placeholder { color: #777; }
         #model-selector { background-color: #444; color: #EAEAEA; border: none; border-radius: 5px; padding: 8px; margin-left: 10px; font-family: inherit; cursor: pointer; }
         #chat-form button { width: 32px; height: 32px; border: none; background-color: #555; color: #EAEAEA; border-radius: 8px; cursor: pointer; font-size: 18px; margin-left: 10px; transition: background-color 0.2s ease; }
         #chat-form button:hover { background-color: #666; }
-
-        /* ▼▼▼ NEW CSS FOR FILE UPLOAD ▼▼▼ */
-        #file-upload-btn {
-            background: none; border: none; color: #999; font-size: 20px;
-            cursor: pointer; padding: 5px; margin-right: 10px;
-        }
+        #file-upload-btn { background: none; border: none; color: #999; font-size: 20px; cursor: pointer; padding: 5px; margin-right: 10px; }
         #file-upload-btn:hover { color: #EAEAEA; }
-        #file-attachment-preview {
-            max-width: 800px; margin: 0 auto; padding: 0 10px;
-            display: none; /* Hidden by default */
-            align-items: center;
-            font-size: 12px; color: #999;
-        }
-        #file-attachment-preview span {
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            background-color: #2A2A2A; padding: 3px 8px; border-radius: 5px;
-        }
-        #remove-file-btn {
-            background: none; border: none; color: #999; cursor: pointer;
-            font-size: 16px; margin-left: 8px;
-        }
-        /* ▲▲▲ END OF NEW CSS ▲▲▲ */
+        #file-attachment-preview { max-width: 800px; margin: 0 auto; padding: 0 10px; display: none; align-items: center; font-size: 12px; color: #999; }
+        #file-attachment-preview span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background-color: #2A2A2A; padding: 3px 8px; border-radius: 5px; }
+        #remove-file-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 16px; margin-left: 8px; }
     </style>
 </head>
 <body>
 
 <div id="app-container">
-    <div id="sidebar"><!-- Sidebar HTML is unchanged --></div>
+    <!-- ▼▼▼ THE FIX: The sidebar HTML is now correctly placed here ▼▼▼ -->
+    <div id="sidebar">
+        <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
+        <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
+        <hr style="border-color: #333; margin: 10px 0; border-style: solid;">
+        <div id="chat-history-list"></div>
+    </div>
     <div id="chat-area">
         <div id="chat-box">
             <div class="message bot-message">Welcome! You can now attach files.</div>
             <div id="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
         </div>
         <div id="input-container">
-            <!-- ▼▼▼ NEW: FILE PREVIEW AREA ▼▼▼ -->
             <div id="file-attachment-preview">
                 <span>File Name Will Go Here</span>
                 <button id="remove-file-btn">×</button>
             </div>
             <form id="chat-form">
-                <!-- ▼▼▼ NEW: FILE UPLOAD BUTTONS ▼▼▼ -->
                 <input type="file" id="file-input" hidden />
                 <button type="button" id="file-upload-btn">📎</button>
                 <input type="text" id="user-input" placeholder="Message Gemini..." autocomplete="off">
@@ -95,6 +82,7 @@
 
 <script>
     // --- ELEMENT REFERENCES ---
+    // Now these will all find their elements correctly when the page loads.
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
@@ -103,7 +91,6 @@
     const chatHistoryList = document.getElementById('chat-history-list');
     const modelSelector = document.getElementById('model-selector');
     const typingIndicator = document.getElementById('typing-indicator');
-    // ▼▼▼ NEW: FILE UPLOAD REFERENCES ▼▼▼
     const fileUploadBtn = document.getElementById('file-upload-btn');
     const fileInput = document.getElementById('file-input');
     const filePreview = document.getElementById('file-attachment-preview');
@@ -113,7 +100,6 @@
     // --- STATE VARIABLES ---
     let conversationHistory = [];
     let currentChatId = null;
-    // ▼▼▼ NEW: STATE FOR ATTACHED FILE ▼▼▼
     let attachedFile = null;
 
     // --- EVENT LISTENERS ---
@@ -121,7 +107,6 @@
     newChatBtn.addEventListener('click', startNewChat);
     saveChatBtn.addEventListener('click', saveCurrentChat);
     chatForm.addEventListener('submit', handleFormSubmit);
-    // ▼▼▼ NEW: FILE UPLOAD LISTENERS ▼▼▼
     fileUploadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
     removeFileBtn.addEventListener('click', removeAttachedFile);
@@ -130,7 +115,7 @@
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
-        removeAttachedFile(); // Also clear any attached file
+        removeAttachedFile();
         chatBox.innerHTML = '<div class="message bot-message">Welcome! You can now attach files.</div>';
         chatBox.appendChild(typingIndicator);
     }
@@ -138,30 +123,24 @@
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
-        // Allow sending a message with only a file attached
         if (messageText === '' && !attachedFile) return;
 
-        // ▼▼▼ NEW: CONSTRUCT THE 'PARTS' ARRAY FOR MULTIMODAL INPUT ▼▼▼
         const userParts = [];
+        let displayMessage = messageText; // The text to display in the chat bubble
+
         if (attachedFile) {
-            userParts.push({
-                inlineData: {
-                    mimeType: attachedFile.type,
-                    data: attachedFile.data
-                }
-            });
-            addMessage(`[File: ${attachedFile.name}]`, 'user-message');
+            userParts.push({ inlineData: { mimeType: attachedFile.type, data: attachedFile.data } });
+            // Create a display message that includes the file name
+            displayMessage = `[File: ${attachedFile.name}]` + (messageText ? `\n\n${messageText}` : '');
         }
         if (messageText) {
             userParts.push({ text: messageText });
-            if (!attachedFile) { // Only add text bubble if no file
-                 addMessage(messageText, 'user-message');
-            }
         }
         
+        addMessage(displayMessage, 'user-message');
         conversationHistory.push({ role: 'user', parts: userParts });
         userInput.value = '';
-        removeAttachedFile(); // Clear file after sending
+        removeAttachedFile();
 
         typingIndicator.style.display = 'flex';
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -192,21 +171,13 @@
         }
     }
 
-    // ▼▼▼ NEW: FILE HANDLING FUNCTIONS ▼▼▼
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onloadend = () => {
-            // The result is a data URL, we need to extract the base64 part
             const base64Data = reader.result.split(',')[1];
-            attachedFile = {
-                name: file.name,
-                type: file.type,
-                data: base64Data
-            };
-            // Show the preview
+            attachedFile = { name: file.name, type: file.type, data: base64Data };
             filePreviewName.textContent = file.name;
             filePreview.style.display = 'flex';
         };
@@ -215,32 +186,20 @@
 
     function removeAttachedFile() {
         attachedFile = null;
-        fileInput.value = ''; // Reset the file input
+        fileInput.value = '';
         filePreview.style.display = 'none';
     }
-    // ▲▲▲ END OF NEW FILE FUNCTIONS ▲▲▲
 
     function addMessage(text, className) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', className);
+        messageElement.style.whiteSpace = 'pre-wrap'; // Allows line breaks to be rendered
         messageElement.textContent = text;
         chatBox.insertBefore(messageElement, typingIndicator);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     // --- All other functions (getSavedChats, saveCurrentChat, etc.) remain the same ---
-    // [Self-correction: The sidebar HTML was removed in the previous response, adding it back]
-    document.getElementById('sidebar').innerHTML = `
-        <div id="new-chat-btn" class="sidebar-btn">+ New Chat</div>
-        <div id="save-chat-btn" class="sidebar-btn">💾 Save Current Chat</div>
-        <hr style="border-color: #333; margin: 10px 0; border-style: solid;">
-        <div id="chat-history-list"></div>
-    `;
-    // Re-add event listeners after regenerating sidebar
-    document.getElementById('new-chat-btn').addEventListener('click', startNewChat);
-    document.getElementById('save-chat-btn').addEventListener('click', saveCurrentChat);
-    // [Self-correction complete]
-
     function getSavedChats() { return JSON.parse(localStorage.getItem('gemini-chat-histories')) || []; }
     function saveCurrentChat() {
         if (conversationHistory.length === 0) { alert("Cannot save an empty chat."); return; }
@@ -260,8 +219,8 @@
         renderSavedChats();
     }
     function renderSavedChats() {
-        const savedChats = getSavedChats();
         const chatHistoryList = document.getElementById('chat-history-list');
+        const savedChats = getSavedChats();
         chatHistoryList.innerHTML = '';
         savedChats.forEach(chat => {
             const container = document.createElement('div');
@@ -291,12 +250,10 @@
                 const userMessage = message.parts.find(p => p.text);
                 const fileMessage = message.parts.find(p => p.inlineData);
                 const roleClass = message.role === 'user' ? 'user-message' : 'bot-message';
-                if (fileMessage) {
-                    addMessage(`[File Attached]`, roleClass);
-                }
-                if (userMessage) {
-                    addMessage(userMessage.text, roleClass);
-                }
+                let displayMessage = '';
+                if (fileMessage) { displayMessage += `[File Attached]\n\n`; }
+                if (userMessage) { displayMessage += userMessage.text; }
+                addMessage(displayMessage, roleClass);
             });
             chatBox.appendChild(typingIndicator);
         }
