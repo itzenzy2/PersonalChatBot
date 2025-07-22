@@ -31,12 +31,13 @@ exports.handler = async function(event, context) {
     }
     
     const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    // ▼▼▼ THE ONLY CHANGE IS ON THIS LINE ▼▼▼
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // The user's latest message is the last one in the history array.
-    // We separate it from the rest of the history for the API call.
-    const latestUserMessage = history.pop().parts[0].text; // Get the user's prompt text
-    const chatHistoryForApi = history; // The rest of the array is the history
+    const latestUserMessage = history.pop().parts[0].text;
+    const chatHistoryForApi = history;
 
     // Start a chat session with the previous history
     const chat = model.startChat({
