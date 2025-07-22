@@ -1,11 +1,13 @@
 [build]
   publish = "/"
   functions = "netlify/functions"
+  command = ""  # Add empty command to prevent build errors
 
 [functions]
   directory = "netlify/functions"
-  # This explicitly tells Netlify to recognize Python functions
-  included_files = ["netlify/functions/requirements.txt"]
+  node_bundler = "esbuild"  # Optional but recommended
+  external_node_modules = []
+  included_files = ["netlify/functions/**"]  # Ensure all function files are included
 
 [[redirects]]
   from = "/api/*"
