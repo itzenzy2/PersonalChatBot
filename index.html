@@ -42,6 +42,10 @@
         .sidebar-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); background: linear-gradient(135deg, var(--accent-hover) 0%, #4f46e5 100%); }
         .sidebar-btn:active { transform: translateY(0); }
         .sidebar-btn i { font-size: 16px; }
+        .auto-save-enabled { background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%); }
+        .auto-save-enabled:hover { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
+        .auto-save-disabled { background: linear-gradient(135deg, var(--text-muted) 0%, #52525b 100%); }
+        .auto-save-disabled:hover { background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%); }
         #chat-history-list { flex-grow: 1; overflow-y: auto; margin-top: 8px; }
         .saved-chat-container { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: var(--radius-md); transition: all 0.2s ease; margin-bottom: 4px; border: 1px solid transparent; }
         .saved-chat-container:hover { background: var(--tertiary-bg); border-color: var(--border-color); transform: translateX(4px); }
@@ -102,6 +106,7 @@
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn"><i class="fas fa-plus"></i> New Chat</div>
         <div id="save-chat-btn" class="sidebar-btn"><i class="fas fa-save"></i> Save Current Chat</div>
+        <div id="auto-save-toggle-btn" class="sidebar-btn auto-save-enabled"><i class="fas fa-magic"></i> Auto-save: ON</div>
         <hr>
         <div id="chat-history-list"></div>
     </div>
@@ -137,6 +142,7 @@
     const chatBox = document.getElementById('chat-box');
     const newChatBtn = document.getElementById('new-chat-btn');
     const saveChatBtn = document.getElementById('save-chat-btn');
+    const autoSaveToggleBtn = document.getElementById('auto-save-toggle-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
     const modelSelector = document.getElementById('model-selector');
     const typingIndicator = document.getElementById('typing-indicator');
@@ -148,18 +154,31 @@
     let conversationHistory = [];
     let currentChatId = null;
     let attachedFile = null;
+    let autoSaveTimer = null;
+    let autoSaveEnabled = true;
 
     // All event listeners are the same
     document.addEventListener('DOMContentLoaded', () => {
+        loadAutoSavePreference();
         startNewChat();
         renderSavedChats();
     });
     newChatBtn.addEventListener('click', startNewChat);
     saveChatBtn.addEventListener('click', saveCurrentChat);
+    autoSaveToggleBtn.addEventListener('click', toggleAutoSave);
     chatForm.addEventListener('submit', handleFormSubmit);
     fileUploadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
     removeFileBtn.addEventListener('click', removeAttachedFile);
+    userInput.addEventListener('input', handleUserInput);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    function handleBeforeUnload() {
+        // Auto-save before page unload if there's unsaved content
+        if (autoSaveEnabled && conversationHistory.length > 0) {
+            autoSaveChat();
+        }
+    }
 
     function addMessage(text, className) {
         const messageElement = document.createElement('div');
@@ -231,6 +250,9 @@
             const botReply = data.reply;
             addMessage(botReply, 'bot-message');
             conversationHistory.push({ role: 'model', parts: [{ text: botReply }] });
+            
+            // Trigger auto-save after successful message exchange
+            scheduleAutoSave();
         } catch (error) {
             typingIndicator.style.display = 'none';
             addMessage(`Sorry, an error occurred: ${error.message}`, 'bot-message');
@@ -254,25 +276,153 @@
         fileInput.value = '';
         filePreview.style.display = 'none';
     }
+
+    function handleUserInput() {
+        // Schedule auto-save when user is typing (with longer delay)
+        if (autoSaveEnabled && conversationHistory.length > 0) {
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+            autoSaveTimer = setTimeout(() => {
+                autoSaveChat();
+            }, 10000); // Auto-save after 10 seconds of inactivity while typing
+        }
+    }
     function getSavedChats() { return JSON.parse(localStorage.getItem('gemini-chat-histories')) || []; }
-    function saveCurrentChat() {
-        if (conversationHistory.length === 0) { alert("Cannot save an empty chat."); return; }
+    function saveCurrentChat(isAutoSave = false) {
+        if (conversationHistory.length === 0) { 
+            if (!isAutoSave) alert("Cannot save an empty chat."); 
+            return; 
+        }
         const savedChats = getSavedChats();
         const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
         const title = firstUserMessage ? (firstUserMessage.parts.find(p => p.text) || {text: "Chat with file"}).text.substring(0, 30) : "New Chat";
         if (currentChatId) {
             const chatIndex = savedChats.findIndex(chat => chat.id === currentChatId);
-            savedChats[chatIndex].history = conversationHistory;
-            savedChats[chatIndex].title = title;
+            if (chatIndex !== -1) {
+                savedChats[chatIndex].history = conversationHistory;
+                savedChats[chatIndex].title = title;
+                savedChats[chatIndex].lastModified = Date.now();
+            }
         } else {
             currentChatId = Date.now();
-            savedChats.push({ id: currentChatId, title: title, history: conversationHistory });
+            savedChats.push({ 
+                id: currentChatId, 
+                title: title, 
+                history: conversationHistory,
+                lastModified: Date.now()
+            });
         }
         localStorage.setItem('gemini-chat-histories', JSON.stringify(savedChats));
-        alert("Chat saved!");
+        
+        if (!isAutoSave) {
+            alert("Chat saved!");
+        } else {
+            showAutoSaveIndicator();
+        }
         renderSavedChats();
     }
-    function renderSavedChats() {
+
+    function autoSaveChat() {
+        if (autoSaveEnabled && conversationHistory.length > 0) {
+            saveCurrentChat(true);
+        }
+    }
+
+    function scheduleAutoSave() {
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+        }
+        autoSaveTimer = setTimeout(() => {
+            autoSaveChat();
+        }, 2000); // Auto-save 2 seconds after the last activity
+    }
+
+    function showAutoSaveIndicator() {
+        // Create or update auto-save indicator
+        let indicator = document.getElementById('auto-save-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'auto-save-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success-color);
+                color: white;
+                padding: 8px 16px;
+                border-radius: var(--radius-md);
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 1000;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+                box-shadow: var(--shadow-md);
+            `;
+            indicator.innerHTML = '<i class="fas fa-check"></i> Auto-saved';
+            document.body.appendChild(indicator);
+        }
+        
+        // Show the indicator
+        setTimeout(() => {
+            indicator.style.opacity = '1';
+            indicator.style.transform = 'translateY(0)';
+        }, 100);
+        
+        // Hide it after 2 seconds
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+            indicator.style.transform = 'translateY(-10px)';
+                 }, 2000);
+     }
+
+     function toggleAutoSave() {
+         autoSaveEnabled = !autoSaveEnabled;
+         
+         if (autoSaveEnabled) {
+             autoSaveToggleBtn.className = 'sidebar-btn auto-save-enabled';
+             autoSaveToggleBtn.innerHTML = '<i class="fas fa-magic"></i> Auto-save: ON';
+             
+             // Save current state to localStorage
+             localStorage.setItem('gemini-auto-save-enabled', 'true');
+             
+             // If there's content, schedule an auto-save
+             if (conversationHistory.length > 0) {
+                 scheduleAutoSave();
+             }
+         } else {
+             autoSaveToggleBtn.className = 'sidebar-btn auto-save-disabled';
+             autoSaveToggleBtn.innerHTML = '<i class="fas fa-ban"></i> Auto-save: OFF';
+             
+             // Save current state to localStorage
+             localStorage.setItem('gemini-auto-save-enabled', 'false');
+             
+             // Clear any pending auto-save
+             if (autoSaveTimer) {
+                 clearTimeout(autoSaveTimer);
+                 autoSaveTimer = null;
+             }
+         }
+     }
+
+     function loadAutoSavePreference() {
+         const saved = localStorage.getItem('gemini-auto-save-enabled');
+         if (saved !== null) {
+             autoSaveEnabled = saved === 'true';
+         }
+         
+         // Update button appearance based on preference
+         if (autoSaveEnabled) {
+             autoSaveToggleBtn.className = 'sidebar-btn auto-save-enabled';
+             autoSaveToggleBtn.innerHTML = '<i class="fas fa-magic"></i> Auto-save: ON';
+         } else {
+             autoSaveToggleBtn.className = 'sidebar-btn auto-save-disabled';
+             autoSaveToggleBtn.innerHTML = '<i class="fas fa-ban"></i> Auto-save: OFF';
+         }
+     }
+
+     function renderSavedChats() {
         const chatHistoryList = document.getElementById('chat-history-list');
         const savedChats = getSavedChats();
         chatHistoryList.innerHTML = '';
@@ -334,6 +484,12 @@
         chatBox.innerHTML = '';
         chatBox.appendChild(typingIndicator);
         addMessage("Hello! How can I help you today?", 'bot-message');
+        
+        // Clear any existing auto-save timer
+        if (autoSaveTimer) {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = null;
+        }
     }
 </script>
 
