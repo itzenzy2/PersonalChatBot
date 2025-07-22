@@ -1,0 +1,11 @@
+{
+  "name": "gemini-chatbot-live",
+  "version": "1.0.0",
+  "description": "Gemini AI Chatbot",
+  "dependencies": {
+    "@google/generative-ai": "^0.2.1"
+  },
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  }
+}
