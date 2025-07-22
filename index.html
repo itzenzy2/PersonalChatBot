@@ -30,22 +30,22 @@
         .bot-message p { margin: 0; }
         .bot-message ul, .bot-message ol { padding-left: 20px; margin-top: 10px; margin-bottom: 10px; }
         
-        /* ▼▼▼ NEW: CODE EDITOR STYLING ▼▼▼ */
         .bot-message pre {
-            background-color: #1E1E1E; /* Darker background for contrast */
+            background-color: #1E1E1E;
             border: 1px solid #444;
             border-radius: 8px;
             padding: 15px;
             white-space: pre-wrap;
             word-wrap: break-word;
             margin: 10px 0;
-            font-family: "Fira Code", "Courier New", Courier, monospace; /* A nice coding font */
+            font-family: "Fira Code", "Courier New", Courier, monospace;
             font-size: 14px;
-            overflow-x: auto; /* Allow horizontal scrolling for long lines */
+            overflow-x: auto;
+            /* ▼▼▼ NEW: Make the code block a positioning container ▼▼▼ */
+            position: relative;
         }
-        .bot-message code { font-family: inherit; } /* Make inline code use the pre font */
+        .bot-message code { font-family: inherit; }
         
-        /* ▼▼▼ NEW: COPY BUTTON STYLING ▼▼▼ */
         .copy-btn {
             position: absolute;
             top: 10px;
@@ -57,13 +57,31 @@
             padding: 5px 8px;
             font-size: 12px;
             cursor: pointer;
-            opacity: 0; /* Hidden by default */
+            opacity: 0;
             transition: opacity 0.2s ease, background-color 0.2s ease;
         }
-        .bot-message:hover .copy-btn {
-            opacity: 1; /* Show on hover */
-        }
+        .bot-message:hover .copy-btn { opacity: 1; }
         .copy-btn:hover { background-color: #555; }
+
+        /* ▼▼▼ NEW: STYLES FOR THE DEDICATED CODE COPY BUTTON ▼▼▼ */
+        .copy-code-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: #2A2A2A;
+            color: #aaa;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+        }
+        .bot-message pre:hover .copy-code-btn {
+            opacity: 1; /* Show on hover of the code block */
+        }
+        .copy-code-btn:hover { background-color: #555; color: #EAEAEA; }
         /* ▲▲▲ END OF NEW STYLES ▲▲▲ */
 
         #typing-indicator { display: none; align-items: center; margin: 15px 0; padding: 14px 20px; border-radius: 18px; background-color: #343541; align-self: flex-start; border-bottom-left-radius: 4px; }
@@ -151,25 +169,36 @@
         messageElement.classList.add('message', className);
 
         if (className === 'bot-message') {
-            // Render Markdown content
             messageElement.innerHTML = marked.parse(text);
 
-            // Create and append the copy button
+            // Add the main "Copy" button for the whole message
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn';
             copyBtn.textContent = '📋 Copy';
             copyBtn.addEventListener('click', () => {
-                // Use the message's text content for copying
-                navigator.clipboard.writeText(messageElement.textContent.replace('📋 Copy', '').trim());
+                navigator.clipboard.writeText(messageElement.textContent.replace(/📋 Copy|✅ Copied!|Copy Code/g, '').trim());
                 copyBtn.textContent = '✅ Copied!';
-                setTimeout(() => {
-                    copyBtn.textContent = '📋 Copy';
-                }, 2000); // Revert back after 2 seconds
+                setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 2000);
             });
             messageElement.appendChild(copyBtn);
 
+            // Find all code blocks and add a dedicated copy button to them
+            const allCodeBlocks = messageElement.querySelectorAll('pre');
+            allCodeBlocks.forEach(block => {
+                const codeCopyBtn = document.createElement('button');
+                codeCopyBtn.className = 'copy-code-btn';
+                codeCopyBtn.textContent = 'Copy Code';
+                codeCopyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent the main copy button from firing
+                    const codeToCopy = block.querySelector('code').textContent;
+                    navigator.clipboard.writeText(codeToCopy);
+                    codeCopyBtn.textContent = 'Copied!';
+                    setTimeout(() => { codeCopyBtn.textContent = 'Copy Code'; }, 2000);
+                });
+                block.appendChild(codeCopyBtn);
+            });
+
         } else {
-            // User messages are plain text
             messageElement.style.whiteSpace = 'pre-wrap';
             messageElement.textContent = text;
         }
