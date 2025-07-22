@@ -62,7 +62,7 @@
     </div>
     <div id="chat-area">
         <div id="chat-box">
-            <div class="message bot-message">Welcome! The bot's responses will now stream in real-time.</div>
+            <div class="message bot-message">Welcome back! Streaming is disabled for stability.</div>
             <div id="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
         </div>
         <div id="input-container">
@@ -121,9 +121,9 @@
         }
         chatBox.insertBefore(messageElement, typingIndicator);
         chatBox.scrollTop = chatBox.scrollHeight;
-        return messageElement;
     }
 
+    // ▼▼▼ REVERTED `handleFormSubmit` TO THE STABLE, NON-STREAMING VERSION ▼▼▼
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
@@ -142,8 +142,9 @@
         userInput.value = '';
         removeAttachedFile();
 
-        const botMessageElement = addMessage('', 'bot-message');
-        let botReply = '';
+        // Show the typing indicator
+        typingIndicator.style.display = 'flex';
+        chatBox.scrollTop = chatBox.scrollHeight;
 
         try {
             const selectedModel = modelSelector.value;
@@ -156,31 +157,23 @@
                 })
             });
 
-            // ▼▼▼ THE FIX IS HERE ▼▼▼
+            // Hide the indicator
+            typingIndicator.style.display = 'none';
+
             if (!response.ok) {
-                // Instead of response.json(), read the error as plain text.
-                // This will handle both our custom JSON errors and platform errors.
-                const errorText = await response.text();
-                throw new Error(errorText || 'An unknown error occurred on the server.');
+                // This error handling is now safe because we expect JSON
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Something went wrong.');
             }
-            // ▲▲▲ END OF FIX ▲▲▲
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                botReply += decoder.decode(value, { stream: true });
-                botMessageElement.innerHTML = marked.parse(botReply);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
+            
+            const data = await response.json();
+            const botReply = data.reply;
+            addMessage(botReply, 'bot-message');
             conversationHistory.push({ role: 'model', parts: [{ text: botReply }] });
 
         } catch (error) {
-            // Now this will display the *actual* error message from the server.
-            botMessageElement.textContent = `Sorry, an error occurred: ${error.message}`;
+            typingIndicator.style.display = 'none';
+            addMessage(`Sorry, an error occurred: ${error.message}`, 'bot-message');
             conversationHistory.pop();
         }
     }
@@ -190,7 +183,7 @@
         conversationHistory = [];
         currentChatId = null;
         removeAttachedFile();
-        chatBox.innerHTML = '<div class="message bot-message">Welcome! The bot\'s responses will now stream in real-time.</div>';
+        chatBox.innerHTML = '<div class="message bot-message">Welcome back! Streaming is disabled for stability.</div>';
         chatBox.appendChild(typingIndicator);
     }
     function handleFileSelect(event) {
