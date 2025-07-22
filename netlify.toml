@@ -1,13 +1,12 @@
 [build]
   publish = "/"
   functions = "netlify/functions"
-  command = ""  # Add empty command to prevent build errors
+  command = "npm install"  # Add this line to install dependencies
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"  # Optional but recommended
-  external_node_modules = []
-  included_files = ["netlify/functions/**"]  # Ensure all function files are included
+  node_bundler = "esbuild"
+  external_node_modules = ["@google/generative-ai"]  # Mark as external
 
 [[redirects]]
   from = "/api/*"
