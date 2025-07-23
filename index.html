@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* All previous CSS is here, plus the new styles */
+        /* All CSS is unchanged */
         :root {
             --primary-bg: #0f0f0f;
             --secondary-bg: #1a1a1a;
@@ -92,40 +92,19 @@
         #remove-file-btn:hover { color: var(--error-color); background: rgba(239, 68, 68, 0.1); }
         hr { border: none; height: 1px; background: var(--border-light); margin: 20px 0; opacity: 0.5; }
         .bot-message:first-child { background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--tertiary-bg) 100%); border: 1px solid var(--accent-color); }
-        
-        /* ▼▼▼ NEW STYLES FROM YOUR GUIDE ▼▼▼ */
         .web-search-enabled { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .web-search-enabled:hover { background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%); }
         .web-search-disabled { background: linear-gradient(135deg, var(--text-muted) 0%, #52525b 100%); }
         .web-search-disabled:hover { background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%); }
-        .search-indicator {
-            display: none;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid #3b82f6;
-            border-radius: var(--radius-md);
-            padding: 8px 12px;
-            margin: 8px 0;
-            font-size: 13px;
-            color: #3b82f6;
-            align-items: center;
-            gap: 8px;
-        }
+        .search-indicator { display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: var(--radius-md); padding: 8px 12px; margin: 8px 0; font-size: 13px; color: #3b82f6; align-items: center; gap: 8px; }
         .search-indicator i { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .grounding-sources {
-            margin-top: 12px;
-            padding: 12px;
-            background: var(--tertiary-bg);
-            border-radius: var(--radius-md);
-            border-left: 3px solid #3b82f6;
-        }
+        .grounding-sources { margin-top: 12px; padding: 12px; background: var(--tertiary-bg); border-radius: var(--radius-md); border-left: 3px solid #3b82f6; }
         .grounding-sources h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
         .grounding-sources ul { margin: 0; padding-left: 16px; }
         .grounding-sources li { margin-bottom: 4px; font-size: 12px; }
         .grounding-sources a { color: #3b82f6; text-decoration: none; }
         .grounding-sources a:hover { text-decoration: underline; }
-        /* ▲▲▲ END OF NEW STYLES ▲▲▲ */
-
         @media (max-width: 768px) {
             #sidebar { width: 240px; padding: 16px; }
             #chat-box { padding: 20px 16px; }
@@ -140,10 +119,7 @@
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn"><i class="fas fa-plus"></i> New Chat</div>
         <div id="auto-save-toggle-btn" class="sidebar-btn auto-save-enabled"><i class="fas fa-magic"></i> Auto-save: ON</div>
-        <!-- ▼▼▼ NEW WEB SEARCH BUTTON ▼▼▼ -->
-        <div id="web-search-toggle-btn" class="sidebar-btn web-search-enabled">
-            <i class="fas fa-globe"></i> Web Search: ON
-        </div>
+        <div id="web-search-toggle-btn" class="sidebar-btn web-search-enabled"><i class="fas fa-globe"></i> Web Search: ON</div>
         <hr>
         <div id="chat-history-list"></div>
     </div>
@@ -179,7 +155,7 @@
     const chatBox = document.getElementById('chat-box');
     const newChatBtn = document.getElementById('new-chat-btn');
     const autoSaveToggleBtn = document.getElementById('auto-save-toggle-btn');
-    const webSearchToggleBtn = document.getElementById('web-search-toggle-btn'); // New
+    const webSearchToggleBtn = document.getElementById('web-search-toggle-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
     const modelSelector = document.getElementById('model-selector');
     const typingIndicator = document.getElementById('typing-indicator');
@@ -195,18 +171,18 @@
     let attachedFile = null;
     let autoSaveTimer = null;
     let autoSaveEnabled = true;
-    let webSearchEnabled = true; // New
+    let webSearchEnabled = true;
 
     // Update event listeners
     document.addEventListener('DOMContentLoaded', () => {
         loadAutoSavePreference();
-        loadWebSearchPreference(); // New
+        loadWebSearchPreference();
         startNewChat();
         renderSavedChats();
     });
     newChatBtn.addEventListener('click', startNewChat);
     autoSaveToggleBtn.addEventListener('click', toggleAutoSave);
-    webSearchToggleBtn.addEventListener('click', toggleWebSearch); // New
+    webSearchToggleBtn.addEventListener('click', toggleWebSearch);
     chatForm.addEventListener('submit', handleFormSubmit);
     fileUploadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFileSelect);
@@ -214,7 +190,6 @@
     userInput.addEventListener('input', handleUserInput);
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // ▼▼▼ ALL NEW FUNCTIONS FROM YOUR GUIDE ▼▼▼
     function toggleWebSearch() {
         webSearchEnabled = !webSearchEnabled;
         localStorage.setItem('gemini-web-search-enabled', webSearchEnabled.toString());
@@ -233,9 +208,7 @@
 
     function loadWebSearchPreference() {
         const saved = localStorage.getItem('gemini-web-search-enabled');
-        if (saved !== null) {
-            webSearchEnabled = saved === 'true';
-        }
+        if (saved !== null) { webSearchEnabled = saved === 'true'; }
         updateWebSearchButton();
     }
 
@@ -248,29 +221,35 @@
         return indicator;
     }
 
+    // ▼▼▼ THE CORRECTED FUNCTION FROM YOUR RESEARCH ▼▼▼
     function addGroundingSources(groundingMetadata, messageElement) {
-        if (!groundingMetadata || !groundingMetadata.webSearchQueries) return;
+        if (!groundingMetadata) return;
         
         const sourcesDiv = document.createElement('div');
         sourcesDiv.className = 'grounding-sources';
         
         let sourcesHtml = '<h4><i class="fas fa-link"></i> Sources</h4><ul>';
         
-        groundingMetadata.webSearchQueries.forEach(query => {
-            if (query.results) {
-                query.results.forEach(result => {
-                    sourcesHtml += `<li><a href="${result.uri}" target="_blank">${result.title}</a></li>`;
-                });
-            }
-        });
+        // Handle the groundingChunks structure
+        if (groundingMetadata.groundingChunks) {
+            const uniqueUris = new Set();
+            groundingMetadata.groundingChunks.forEach(chunk => {
+                if (chunk.web && chunk.web.uri && !uniqueUris.has(chunk.web.uri)) {
+                    sourcesHtml += `<li><a href="${chunk.web.uri}" target="_blank" rel="noopener noreferrer">${chunk.web.title || chunk.web.uri}</a></li>`;
+                    uniqueUris.add(chunk.web.uri);
+                }
+            });
+        }
         
         sourcesHtml += '</ul>';
-        sourcesDiv.innerHTML = sourcesHtml;
-        messageElement.appendChild(sourcesDiv);
+        // Only add the sources box if we actually found any list items
+        if (sourcesHtml.includes('<li>')) {
+            sourcesDiv.innerHTML = sourcesHtml;
+            messageElement.appendChild(sourcesDiv);
+        }
     }
-    // ▲▲▲ END OF NEW FUNCTIONS ▲▲▲
+    // ▲▲▲ END OF CORRECTED FUNCTION ▲▲▲
 
-    // ▼▼▼ UPDATED `handleFormSubmit` and `addMessage` ▼▼▼
     async function handleFormSubmit(event) {
         event.preventDefault();
         const messageText = userInput.value.trim();
@@ -305,7 +284,7 @@
                 body: JSON.stringify({ 
                     history: JSON.parse(JSON.stringify(conversationHistory)), 
                     model: selectedModel,
-                    systemPrompt: '', // System prompt logic removed for simplicity, can be re-added
+                    systemPrompt: '', // System prompt logic removed for simplicity
                     enableWebSearch: webSearchEnabled
                 })
             });
@@ -370,9 +349,8 @@
         }
         chatBox.insertBefore(messageElement, typingIndicator);
         chatBox.scrollTop = chatBox.scrollHeight;
-        return messageElement; // Return the element
+        return messageElement;
     }
-    // ▲▲▲ END OF UPDATED FUNCTIONS ▲▲▲
 
     // All other functions remain the same
     function handleUserInput() {
