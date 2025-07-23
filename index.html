@@ -105,11 +105,134 @@
         .grounding-sources li { margin-bottom: 4px; font-size: 12px; }
         .grounding-sources a { color: #3b82f6; text-decoration: none; }
         .grounding-sources a:hover { text-decoration: underline; }
+        
+        /* System Prompt Modal Styles */
+        .system-prompt-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .system-prompt-modal.show {
+            display: flex;
+        }
+        .system-prompt-content {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+        .system-prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .system-prompt-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .system-prompt-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 24px;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+        .system-prompt-close:hover {
+            background: var(--tertiary-bg);
+            color: var(--text-primary);
+        }
+        .system-prompt-textarea {
+            width: 100%;
+            min-height: 200px;
+            background: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+        .system-prompt-textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        .system-prompt-textarea::placeholder {
+            color: var(--text-muted);
+        }
+        .system-prompt-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+        .system-prompt-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .system-prompt-btn.primary {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: var(--text-primary);
+        }
+        .system-prompt-btn.primary:hover {
+            background: linear-gradient(135deg, var(--accent-hover) 0%, #4f46e5 100%);
+            transform: translateY(-1px);
+        }
+        .system-prompt-btn.secondary {
+            background: var(--tertiary-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .system-prompt-btn.secondary:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+        .system-prompt-enabled {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .system-prompt-enabled:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        .system-prompt-disabled {
+            background: linear-gradient(135deg, var(--text-muted) 0%, #52525b 100%);
+        }
+        .system-prompt-disabled:hover {
+            background: linear-gradient(135deg, #52525b 0%, #3f3f46 100%);
+        }
+        
         @media (max-width: 768px) {
             #sidebar { width: 240px; padding: 16px; }
             #chat-box { padding: 20px 16px; }
             .message { max-width: 95%; padding: 16px 20px; }
             #input-container { padding: 16px; }
+            .system-prompt-content { padding: 24px; width: 95%; }
         }
     </style>
 </head>
@@ -118,6 +241,7 @@
 <div id="app-container">
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn"><i class="fas fa-plus"></i> New Chat</div>
+        <div id="system-prompt-btn" class="sidebar-btn system-prompt-disabled"><i class="fas fa-cog"></i> System Prompt</div>
         <div id="auto-save-toggle-btn" class="sidebar-btn auto-save-enabled"><i class="fas fa-magic"></i> Auto-save: ON</div>
         <div id="web-search-toggle-btn" class="sidebar-btn web-search-enabled"><i class="fas fa-globe"></i> Web Search: ON</div>
         <hr>
@@ -148,12 +272,37 @@
     </div>
 </div>
 
+<!-- System Prompt Modal -->
+<div id="system-prompt-modal" class="system-prompt-modal">
+    <div class="system-prompt-content">
+        <div class="system-prompt-header">
+            <h2><i class="fas fa-cog"></i> System Prompt / Custom Instructions</h2>
+            <button id="system-prompt-close" class="system-prompt-close">&times;</button>
+        </div>
+        <div>
+            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">
+                Set custom instructions that will be applied to all conversations. This helps the AI understand your preferences and respond accordingly.
+            </p>
+            <textarea 
+                id="system-prompt-textarea" 
+                class="system-prompt-textarea"
+                placeholder="Example: You are a helpful assistant that always responds in a professional yet friendly tone. When explaining technical concepts, provide practical examples. Keep responses concise but comprehensive."
+            ></textarea>
+        </div>
+        <div class="system-prompt-actions">
+            <button id="system-prompt-clear" class="system-prompt-btn secondary">Clear</button>
+            <button id="system-prompt-save" class="system-prompt-btn primary">Save Instructions</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Add new element references
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const newChatBtn = document.getElementById('new-chat-btn');
+    const systemPromptBtn = document.getElementById('system-prompt-btn');
     const autoSaveToggleBtn = document.getElementById('auto-save-toggle-btn');
     const webSearchToggleBtn = document.getElementById('web-search-toggle-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
@@ -164,6 +313,11 @@
     const filePreview = document.getElementById('file-attachment-preview');
     const filePreviewName = filePreview.querySelector('span');
     const removeFileBtn = document.getElementById('remove-file-btn');
+    const systemPromptModal = document.getElementById('system-prompt-modal');
+    const systemPromptTextarea = document.getElementById('system-prompt-textarea');
+    const systemPromptSaveBtn = document.getElementById('system-prompt-save');
+    const systemPromptClearBtn = document.getElementById('system-prompt-clear');
+    const systemPromptCloseBtn = document.getElementById('system-prompt-close');
     
     // Add new state variables
     let conversationHistory = [];
@@ -172,15 +326,18 @@
     let autoSaveTimer = null;
     let autoSaveEnabled = true;
     let webSearchEnabled = true;
+    let systemPrompt = '';
 
     // Update event listeners
     document.addEventListener('DOMContentLoaded', () => {
         loadAutoSavePreference();
         loadWebSearchPreference();
+        loadSystemPrompt();
         startNewChat();
         renderSavedChats();
     });
     newChatBtn.addEventListener('click', startNewChat);
+    systemPromptBtn.addEventListener('click', openSystemPromptModal);
     autoSaveToggleBtn.addEventListener('click', toggleAutoSave);
     webSearchToggleBtn.addEventListener('click', toggleWebSearch);
     chatForm.addEventListener('submit', handleFormSubmit);
@@ -189,6 +346,16 @@
     removeFileBtn.addEventListener('click', removeAttachedFile);
     userInput.addEventListener('input', handleUserInput);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // System Prompt Modal Event Listeners
+    systemPromptCloseBtn.addEventListener('click', closeSystemPromptModal);
+    systemPromptSaveBtn.addEventListener('click', saveSystemPrompt);
+    systemPromptClearBtn.addEventListener('click', clearSystemPrompt);
+    systemPromptModal.addEventListener('click', (e) => {
+        if (e.target === systemPromptModal) {
+            closeSystemPromptModal();
+        }
+    });
 
     function toggleWebSearch() {
         webSearchEnabled = !webSearchEnabled;
@@ -284,7 +451,7 @@
                 body: JSON.stringify({ 
                     history: JSON.parse(JSON.stringify(conversationHistory)), 
                     model: selectedModel,
-                    systemPrompt: '', // System prompt logic removed for simplicity
+                    systemPrompt: systemPrompt,
                     enableWebSearch: webSearchEnabled
                 })
             });
@@ -498,6 +665,66 @@
         chatBox.appendChild(typingIndicator);
         addMessage("Hello! How can I help you today?", 'bot-message');
         if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+    }
+
+    // System Prompt Functions
+    function openSystemPromptModal() {
+        systemPromptTextarea.value = systemPrompt;
+        systemPromptModal.classList.add('show');
+        systemPromptTextarea.focus();
+    }
+
+    function closeSystemPromptModal() {
+        systemPromptModal.classList.remove('show');
+    }
+
+    function saveSystemPrompt() {
+        systemPrompt = systemPromptTextarea.value.trim();
+        localStorage.setItem('gemini-system-prompt', systemPrompt);
+        updateSystemPromptButton();
+        closeSystemPromptModal();
+        
+        // Show a brief confirmation
+        const saveBtn = systemPromptSaveBtn;
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+        setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+        }, 1500);
+    }
+
+    function clearSystemPrompt() {
+        systemPromptTextarea.value = '';
+        systemPrompt = '';
+        localStorage.removeItem('gemini-system-prompt');
+        updateSystemPromptButton();
+        closeSystemPromptModal();
+    }
+
+    function loadSystemPrompt() {
+        const saved = localStorage.getItem('gemini-system-prompt');
+        if (saved) {
+            systemPrompt = saved;
+        }
+        updateSystemPromptButton();
+    }
+
+    function updateSystemPromptButton() {
+        if (systemPrompt && systemPrompt.trim()) {
+            systemPromptBtn.className = 'sidebar-btn system-prompt-enabled';
+            systemPromptBtn.innerHTML = '<i class="fas fa-cog"></i> System Prompt: ON';
+        } else {
+            systemPromptBtn.className = 'sidebar-btn system-prompt-disabled';
+            systemPromptBtn.innerHTML = '<i class="fas fa-cog"></i> System Prompt: OFF';
+        }
+    }
+
+    // Handle missing functions that were referenced but not defined
+    function handleBeforeUnload() {
+        // Auto-save before leaving if needed
+        if (autoSaveEnabled && conversationHistory.length > 0) {
+            autoSaveChat();
+        }
     }
 </script>
 
