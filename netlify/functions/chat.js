@@ -6,7 +6,7 @@ exports.handler = async function(event, context) {
   }
   
   try {
-    const { history, model: modelName, systemPrompt } = JSON.parse(event.body);
+    const { history, model: modelName, systemPrompt, enableWebSearch } = JSON.parse(event.body);
     
     if (!history || !Array.isArray(history)) {
       return { statusCode: 400, body: JSON.stringify({ error: 'No history provided' }) };
@@ -18,7 +18,19 @@ exports.handler = async function(event, context) {
     }
     
     const genAI = new GoogleGenerativeAI(API_KEY);
-    const model = genAI.getGenerativeModel({ model: modelName || "gemini-1.5-flash" });
+    
+    // Configure model with optional tools for web search
+    const modelConfig = { model: modelName || "gemini-1.5-flash" };
+    
+    // Add Google Search grounding if web search is enabled
+    // Note: This tool works best with specific models like 1.5 Pro.
+    if (enableWebSearch) {
+      modelConfig.tools = [{
+        'googleSearchRetrieval': {}
+      }];
+    }
+    
+    const model = genAI.getGenerativeModel(modelConfig);
 
     const latestMessage = history.pop();
     let chatHistoryForApi = history;
@@ -34,15 +46,19 @@ exports.handler = async function(event, context) {
 
     const chat = model.startChat({ history: chatHistoryForApi });
     
-    // ▼▼▼ REVERTED TO THE STABLE, NON-STREAMING CALL ▼▼▼
     const result = await chat.sendMessage(latestMessage.parts);
     const response = result.response;
     
-    // ▼▼▼ REVERTED TO RETURNING A SIMPLE JSON OBJECT ▼▼▼
+    // Extract grounding metadata if available
+    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+    
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ reply: response.text() })
+      body: JSON.stringify({ 
+        reply: response.text(),
+        groundingMetadata: groundingMetadata // Include grounding sources
+      })
     };
   } catch (error) {
     console.error("Function error:", error);
