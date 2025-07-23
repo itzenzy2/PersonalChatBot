@@ -105,7 +105,6 @@
 <div id="app-container">
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn"><i class="fas fa-plus"></i> New Chat</div>
-        <div id="save-chat-btn" class="sidebar-btn"><i class="fas fa-save"></i> Save Current Chat</div>
         <div id="auto-save-toggle-btn" class="sidebar-btn auto-save-enabled"><i class="fas fa-magic"></i> Auto-save: ON</div>
         <hr>
         <div id="chat-history-list"></div>
@@ -141,7 +140,6 @@
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const newChatBtn = document.getElementById('new-chat-btn');
-    const saveChatBtn = document.getElementById('save-chat-btn');
     const autoSaveToggleBtn = document.getElementById('auto-save-toggle-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
     const modelSelector = document.getElementById('model-selector');
@@ -164,7 +162,6 @@
         renderSavedChats();
     });
     newChatBtn.addEventListener('click', startNewChat);
-    saveChatBtn.addEventListener('click', saveCurrentChat);
     autoSaveToggleBtn.addEventListener('click', toggleAutoSave);
     chatForm.addEventListener('submit', handleFormSubmit);
     fileUploadBtn.addEventListener('click', () => fileInput.click());
@@ -291,7 +288,6 @@
     function getSavedChats() { return JSON.parse(localStorage.getItem('gemini-chat-histories')) || []; }
     function saveCurrentChat(isAutoSave = false) {
         if (conversationHistory.length === 0) { 
-            if (!isAutoSave) alert("Cannot save an empty chat."); 
             return; 
         }
         const savedChats = getSavedChats();
@@ -315,9 +311,7 @@
         }
         localStorage.setItem('gemini-chat-histories', JSON.stringify(savedChats));
         
-        if (!isAutoSave) {
-            alert("Chat saved!");
-        } else {
+        if (isAutoSave) {
             showAutoSaveIndicator();
         }
         renderSavedChats();
