@@ -67,6 +67,11 @@
         .copy-btn { position: absolute; top: 16px; right: 16px; background: var(--tertiary-bg); color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; font-weight: 500; cursor: pointer; opacity: 0; transition: all 0.2s ease; backdrop-filter: blur(10px); }
         .bot-message:hover .copy-btn { opacity: 1; }
         .copy-btn:hover { background: var(--accent-color); color: var(--text-primary); transform: translateY(-1px); }
+        .regenerate-btn { position: absolute; top: 16px; right: 80px; background: var(--tertiary-bg); color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; font-weight: 500; cursor: pointer; opacity: 0; transition: all 0.2s ease; backdrop-filter: blur(10px); }
+        .bot-message:hover .regenerate-btn { opacity: 1; }
+        .regenerate-btn:hover { background: var(--accent-color); color: var(--text-primary); transform: translateY(-1px); }
+        .regenerate-btn:disabled { opacity: 0.5; cursor: not-allowed; background: var(--text-muted); }
+        .regenerate-btn.regenerating { background: var(--accent-color); color: var(--text-primary); opacity: 1; }
         .copy-code-btn { position: absolute; top: 12px; right: 12px; background: var(--tertiary-bg); color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 11px; font-weight: 500; cursor: pointer; opacity: 0; transition: all 0.2s ease; backdrop-filter: blur(10px); }
         .bot-message pre:hover .copy-code-btn { opacity: 1; }
         .copy-code-btn:hover { background: var(--accent-color); color: var(--text-primary); }
@@ -233,6 +238,8 @@
             .message { max-width: 95%; padding: 16px 20px; }
             #input-container { padding: 16px; }
             .system-prompt-content { padding: 24px; width: 95%; }
+            .regenerate-btn { top: 12px; right: 70px; padding: 6px 10px; font-size: 11px; }
+            .copy-btn { top: 12px; right: 12px; padding: 6px 10px; font-size: 11px; }
         }
     </style>
 </head>
@@ -327,6 +334,8 @@
     let autoSaveEnabled = true;
     let webSearchEnabled = true;
     let systemPrompt = '';
+    let lastUserMessage = null;
+    let isRegenerating = false;
 
     // Update event listeners
     document.addEventListener('DOMContentLoaded', () => {
@@ -432,8 +441,19 @@
         
         addMessage(displayMessage, 'user-message');
         conversationHistory.push({ role: 'user', parts: userParts });
+        
+        // Store the last user message for regeneration
+        lastUserMessage = {
+            displayMessage: displayMessage,
+            parts: userParts,
+            attachedFile: attachedFile ? { ...attachedFile } : null
+        };
+        
         userInput.value = '';
         removeAttachedFile();
+        
+        // Disable all previous regenerate buttons
+        disablePreviousRegenerateButtons();
         
         let searchIndicator = null;
         if (webSearchEnabled) {
@@ -477,21 +497,31 @@
         } catch (error) {
             if (searchIndicator) { searchIndicator.remove(); }
             typingIndicator.style.display = 'none';
-            addMessage(`Sorry, an error occurred: ${error.message}`, 'bot-message');
+            addMessage(`Sorry, an error occurred: ${error.message}`, 'bot-message', { isErrorMessage: true });
             conversationHistory.pop();
         }
     }
 
-    function addMessage(text, className) {
+    function addMessage(text, className, options = {}) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', className);
         if (className === 'bot-message') {
             messageElement.innerHTML = marked.parse(text);
+            
+            // Add regenerate button (only for the latest bot message and not for initial greeting)
+            if (!options.isInitialGreeting && !options.isErrorMessage) {
+                const regenerateBtn = document.createElement('button');
+                regenerateBtn.className = 'regenerate-btn';
+                regenerateBtn.innerHTML = '<i class="fas fa-redo"></i> Regenerate';
+                regenerateBtn.addEventListener('click', () => regenerateLastResponse(messageElement, regenerateBtn));
+                messageElement.appendChild(regenerateBtn);
+            }
+            
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn';
             copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
             copyBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(messageElement.textContent.replace(/Copy|Copied!|Copy Code/g, '').trim());
+                navigator.clipboard.writeText(messageElement.textContent.replace(/Copy|Copied!|Copy Code|Regenerate|Regenerating\.\.\./g, '').trim());
                 copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
                 setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
             });
@@ -634,6 +664,8 @@
         if (chatToLoad) {
             currentChatId = chatToLoad.id;
             conversationHistory = chatToLoad.history;
+            lastUserMessage = null;
+            isRegenerating = false;
             removeAttachedFile();
             chatBox.innerHTML = '';
             chatBox.appendChild(typingIndicator); 
@@ -660,10 +692,12 @@
     function startNewChat() {
         conversationHistory = [];
         currentChatId = null;
+        lastUserMessage = null;
+        isRegenerating = false;
         removeAttachedFile();
         chatBox.innerHTML = '';
         chatBox.appendChild(typingIndicator);
-        addMessage("Hello! How can I help you today?", 'bot-message');
+        addMessage("Hello! How can I help you today?", 'bot-message', { isInitialGreeting: true });
         if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
     }
 
@@ -716,6 +750,80 @@
         } else {
             systemPromptBtn.className = 'sidebar-btn system-prompt-disabled';
             systemPromptBtn.innerHTML = '<i class="fas fa-cog"></i> System Prompt: OFF';
+        }
+    }
+
+    // Regenerate Functions
+    function disablePreviousRegenerateButtons() {
+        const allRegenerateButtons = document.querySelectorAll('.regenerate-btn');
+        allRegenerateButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-ban"></i> Disabled';
+        });
+    }
+
+    async function regenerateLastResponse(messageElement, regenerateBtn) {
+        if (!lastUserMessage || isRegenerating) return;
+        
+        isRegenerating = true;
+        regenerateBtn.disabled = true;
+        regenerateBtn.classList.add('regenerating');
+        regenerateBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Regenerating...';
+        
+        // Remove the current bot response from conversation history
+        if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'model') {
+            conversationHistory.pop();
+        }
+        
+        // Remove the current message element
+        const messageToRemove = messageElement;
+        messageToRemove.remove();
+        
+        let searchIndicator = null;
+        if (webSearchEnabled) {
+            searchIndicator = showSearchIndicator();
+        }
+        
+        typingIndicator.style.display = 'flex';
+        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        try {
+            const selectedModel = modelSelector.value;
+            const response = await fetch('/.netlify/functions/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    history: JSON.parse(JSON.stringify(conversationHistory)), 
+                    model: selectedModel,
+                    systemPrompt: systemPrompt,
+                    enableWebSearch: webSearchEnabled
+                })
+            });
+            
+            if (searchIndicator) { searchIndicator.remove(); }
+            typingIndicator.style.display = 'none';
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Something went wrong.');
+            }
+            
+            const data = await response.json();
+            const botReply = data.reply;
+            
+            const newMessageElement = addMessage(botReply, 'bot-message');
+            if (data.groundingMetadata) {
+                addGroundingSources(data.groundingMetadata, newMessageElement);
+            }
+            
+            conversationHistory.push({ role: 'model', parts: [{ text: botReply }] });
+            scheduleAutoSave();
+        } catch (error) {
+            if (searchIndicator) { searchIndicator.remove(); }
+            typingIndicator.style.display = 'none';
+            addMessage(`Sorry, an error occurred during regeneration: ${error.message}`, 'bot-message', { isErrorMessage: true });
+        } finally {
+            isRegenerating = false;
         }
     }
 
