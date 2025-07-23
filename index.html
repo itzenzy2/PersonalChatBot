@@ -92,11 +92,37 @@
         #remove-file-btn:hover { color: var(--error-color); background: rgba(239, 68, 68, 0.1); }
         hr { border: none; height: 1px; background: var(--border-light); margin: 20px 0; opacity: 0.5; }
         .bot-message:first-child { background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--tertiary-bg) 100%); border: 1px solid var(--accent-color); }
+        
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); }
+        .modal-content { background: var(--secondary-bg); margin: 5% auto; padding: 0; border-radius: var(--radius-lg); width: 90%; max-width: 600px; border: 1px solid var(--border-color); box-shadow: var(--shadow-lg); animation: modalSlideIn 0.3s ease; }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 28px 20px 28px; border-bottom: 1px solid var(--border-light); }
+        .modal-header h3 { color: var(--text-primary); font-size: 18px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 12px; }
+        .modal-header h3 i { color: var(--accent-color); }
+        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; padding: 8px; border-radius: var(--radius-sm); transition: all 0.2s ease; }
+        .close-btn:hover { color: var(--text-primary); background: var(--tertiary-bg); }
+        .modal-body { padding: 28px; }
+        .modal-description { color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6; font-size: 14px; }
+        #system-prompt-textarea { width: 100%; height: 150px; background: var(--tertiary-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; color: var(--text-primary); font-family: inherit; font-size: 14px; line-height: 1.5; resize: vertical; min-height: 100px; max-height: 300px; }
+        #system-prompt-textarea:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+        #system-prompt-textarea::placeholder { color: var(--text-muted); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .primary-btn { background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%); color: var(--text-primary); border: none; border-radius: var(--radius-md); padding: 12px 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .primary-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .secondary-btn { background: var(--tertiary-bg); color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .secondary-btn:hover { background: var(--border-color); color: var(--text-primary); }
+        
         @media (max-width: 768px) {
             #sidebar { width: 240px; padding: 16px; }
             #chat-box { padding: 20px 16px; }
             .message { max-width: 95%; padding: 16px 20px; }
             #input-container { padding: 16px; }
+            .modal-content { width: 95%; margin: 10% auto; }
+            .modal-header { padding: 20px 24px 16px 24px; }
+            .modal-body { padding: 24px; }
+            .modal-actions { flex-direction: column-reverse; }
+            .primary-btn, .secondary-btn { justify-content: center; }
         }
     </style>
 </head>
@@ -105,6 +131,7 @@
 <div id="app-container">
     <div id="sidebar">
         <div id="new-chat-btn" class="sidebar-btn"><i class="fas fa-plus"></i> New Chat</div>
+        <div id="system-prompt-btn" class="sidebar-btn"><i class="fas fa-cog"></i> System Prompt</div>
         <div id="auto-save-toggle-btn" class="sidebar-btn auto-save-enabled"><i class="fas fa-magic"></i> Auto-save: ON</div>
         <hr>
         <div id="chat-history-list"></div>
@@ -134,12 +161,33 @@
     </div>
 </div>
 
+<!-- System Prompt Modal -->
+<div id="system-prompt-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-cog"></i> System Prompt / Custom Instructions</h3>
+            <button id="close-modal-btn" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-description">
+                Set custom instructions that will be applied to every conversation. This helps the AI understand your preferences and respond accordingly.
+            </p>
+            <textarea id="system-prompt-textarea" placeholder="Enter your custom instructions here... (e.g., 'Always respond in a friendly tone', 'Explain technical concepts simply', 'Respond in bullet points', etc.)"></textarea>
+            <div class="modal-actions">
+                <button id="clear-prompt-btn" class="secondary-btn"><i class="fas fa-trash"></i> Clear</button>
+                <button id="save-prompt-btn" class="primary-btn"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // All element references and state variables are the same
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
     const newChatBtn = document.getElementById('new-chat-btn');
+    const systemPromptBtn = document.getElementById('system-prompt-btn');
     const autoSaveToggleBtn = document.getElementById('auto-save-toggle-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
     const modelSelector = document.getElementById('model-selector');
@@ -149,19 +197,27 @@
     const filePreview = document.getElementById('file-attachment-preview');
     const filePreviewName = filePreview.querySelector('span');
     const removeFileBtn = document.getElementById('remove-file-btn');
+    const systemPromptModal = document.getElementById('system-prompt-modal');
+    const systemPromptTextarea = document.getElementById('system-prompt-textarea');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const savePromptBtn = document.getElementById('save-prompt-btn');
+    const clearPromptBtn = document.getElementById('clear-prompt-btn');
     let conversationHistory = [];
     let currentChatId = null;
     let attachedFile = null;
     let autoSaveTimer = null;
     let autoSaveEnabled = true;
+    let systemPrompt = '';
 
     // All event listeners are the same
     document.addEventListener('DOMContentLoaded', () => {
         loadAutoSavePreference();
+        loadSystemPrompt();
         startNewChat();
         renderSavedChats();
     });
     newChatBtn.addEventListener('click', startNewChat);
+    systemPromptBtn.addEventListener('click', openSystemPromptModal);
     autoSaveToggleBtn.addEventListener('click', toggleAutoSave);
     chatForm.addEventListener('submit', handleFormSubmit);
     fileUploadBtn.addEventListener('click', () => fileInput.click());
@@ -169,6 +225,17 @@
     removeFileBtn.addEventListener('click', removeAttachedFile);
     userInput.addEventListener('input', handleUserInput);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    closeModalBtn.addEventListener('click', closeSystemPromptModal);
+    savePromptBtn.addEventListener('click', saveSystemPrompt);
+    clearPromptBtn.addEventListener('click', clearSystemPrompt);
+    systemPromptModal.addEventListener('click', (e) => {
+        if (e.target === systemPromptModal) closeSystemPromptModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && systemPromptModal.style.display === 'block') {
+            closeSystemPromptModal();
+        }
+    });
 
     function handleBeforeUnload() {
         // Auto-save before page unload if there's unsaved content
@@ -236,7 +303,11 @@
             const response = await fetch('/.netlify/functions/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ history: JSON.parse(JSON.stringify(conversationHistory)), model: selectedModel })
+                body: JSON.stringify({ 
+                    history: JSON.parse(JSON.stringify(conversationHistory)), 
+                    model: selectedModel,
+                    systemPrompt: systemPrompt
+                })
             });
             typingIndicator.style.display = 'none';
             if (!response.ok) {
@@ -484,6 +555,92 @@
             clearTimeout(autoSaveTimer);
             autoSaveTimer = null;
         }
+    }
+
+    // System Prompt Management Functions
+    function loadSystemPrompt() {
+        const savedPrompt = localStorage.getItem('gemini-system-prompt');
+        if (savedPrompt) {
+            systemPrompt = savedPrompt;
+            updateSystemPromptButton();
+        }
+    }
+
+    function openSystemPromptModal() {
+        systemPromptTextarea.value = systemPrompt;
+        systemPromptModal.style.display = 'block';
+        systemPromptTextarea.focus();
+    }
+
+    function closeSystemPromptModal() {
+        systemPromptModal.style.display = 'none';
+    }
+
+    function saveSystemPrompt() {
+        const newPrompt = systemPromptTextarea.value.trim();
+        systemPrompt = newPrompt;
+        localStorage.setItem('gemini-system-prompt', systemPrompt);
+        updateSystemPromptButton();
+        closeSystemPromptModal();
+        
+        // Show confirmation
+        showNotification('System prompt saved successfully!', 'success');
+    }
+
+    function clearSystemPrompt() {
+        if (confirm('Are you sure you want to clear the system prompt?')) {
+            systemPrompt = '';
+            systemPromptTextarea.value = '';
+            localStorage.removeItem('gemini-system-prompt');
+            updateSystemPromptButton();
+            showNotification('System prompt cleared', 'info');
+        }
+    }
+
+    function updateSystemPromptButton() {
+        if (systemPrompt && systemPrompt.trim()) {
+            systemPromptBtn.style.background = 'linear-gradient(135deg, var(--success-color) 0%, #059669 100%)';
+            systemPromptBtn.innerHTML = '<i class="fas fa-cog"></i> System Prompt ✓';
+        } else {
+            systemPromptBtn.style.background = 'linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%)';
+            systemPromptBtn.innerHTML = '<i class="fas fa-cog"></i> System Prompt';
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : 'var(--accent-color)'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1001;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-md);
+            max-width: 300px;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateY(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
     }
 </script>
 

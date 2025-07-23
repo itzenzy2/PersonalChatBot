@@ -6,7 +6,7 @@ exports.handler = async function(event, context) {
   }
   
   try {
-    const { history, model: modelName } = JSON.parse(event.body);
+    const { history, model: modelName, systemPrompt } = JSON.parse(event.body);
     
     if (!history || !Array.isArray(history)) {
       return { statusCode: 400, body: JSON.stringify({ error: 'No history provided' }) };
@@ -21,7 +21,16 @@ exports.handler = async function(event, context) {
     const model = genAI.getGenerativeModel({ model: modelName || "gemini-1.5-flash" });
 
     const latestMessage = history.pop();
-    const chatHistoryForApi = history;
+    let chatHistoryForApi = history;
+
+    // If system prompt is provided, prepend it to the conversation history
+    if (systemPrompt && systemPrompt.trim()) {
+      chatHistoryForApi = [
+        { role: 'user', parts: [{ text: systemPrompt.trim() }] },
+        { role: 'model', parts: [{ text: 'I understand. I will follow these instructions for our conversation.' }] },
+        ...chatHistoryForApi
+      ];
+    }
 
     const chat = model.startChat({ history: chatHistoryForApi });
     
