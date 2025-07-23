@@ -19,16 +19,21 @@ exports.handler = async function(event, context) {
     
     const genAI = new GoogleGenerativeAI(API_KEY);
     
-    // ▼▼▼ THE FIX IS HERE (from your research) ▼▼▼
     const modelConfig = { model: modelName || "gemini-1.5-flash" };
 
     // Add Google Search grounding if web search is enabled AND the model supports it
-    if (enableWebSearch && (modelName === "gemini-1.5-pro" || modelName === "gemini-2.5-pro")) {
+    // For Gemini 1.5 models (legacy tool)
+    if (enableWebSearch && (modelName === "gemini-1.5-pro" || modelName === "gemini-1.5-flash")) {
+      modelConfig.tools = [{
+        googleSearchRetrieval: {}
+      }];
+    }
+    // For Gemini 2.0+ models (current tool)
+    else if (enableWebSearch && modelName === "gemini-2.5-pro") {
       modelConfig.tools = [{
         googleSearch: {}
       }];
     }
-    // ▲▲▲ END OF FIX ▲▲▲
     
     const model = genAI.getGenerativeModel(modelConfig);
 
