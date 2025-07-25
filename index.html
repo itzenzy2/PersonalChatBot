@@ -272,9 +272,6 @@
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro (Web Search)</option>
                     <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                     <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash</option>
-                    <option value="github-Llama-3.1-70B-Instruct">GitHub - Llama 3.1 70B</option>
-                    <option value="github-Mistral-Large-2">GitHub - Mistral Large 2</option>
-                    <option value="github-gpt-4.1">GitHub - GPT-4.1</option>
                 </select>
                 <button type="submit"><i class="fas fa-arrow-up"></i></button>
             </form>
@@ -368,76 +365,26 @@
             closeSystemPromptModal();
         }
     });
-    
-    // Model selector change event
-    modelSelector.addEventListener('change', handleModelChange);
-    
-    function handleModelChange() {
-        const selectedModel = modelSelector.value;
-        const isGitHubModel = selectedModel.startsWith('github-');
-        
-        // If GitHub model is selected, disable web search
-        if (isGitHubModel && webSearchEnabled) {
-            webSearchEnabled = false;
-            localStorage.setItem('gemini-web-search-enabled', 'false');
-            updateWebSearchButton();
-            alert('Web search is not available with GitHub models. Web search has been disabled.');
-        }
-    }
 
     function toggleWebSearch() {
         webSearchEnabled = !webSearchEnabled;
         localStorage.setItem('gemini-web-search-enabled', webSearchEnabled.toString());
         updateWebSearchButton();
-        
-        // Update model selector options based on web search compatibility
-        const selectedModel = modelSelector.value;
-        const isGitHubModel = selectedModel.startsWith('github-');
-        
-        if (webSearchEnabled && isGitHubModel) {
-            // If web search is enabled but a GitHub model is selected, switch to Gemini
-            modelSelector.value = 'gemini-1.5-pro';
-        }
     }
 
     function updateWebSearchButton() {
-        const selectedModel = modelSelector.value;
-        const isGitHubModel = selectedModel.startsWith('github-');
-        
-        if (isGitHubModel) {
-            // Disable the button for GitHub models
-            webSearchToggleBtn.className = 'sidebar-btn web-search-disabled';
-            webSearchToggleBtn.innerHTML = '<i class="fas fa-globe-slash"></i> Web Search: N/A';
-            webSearchToggleBtn.disabled = true;
-            webSearchToggleBtn.style.opacity = '0.5';
-            webSearchToggleBtn.style.cursor = 'not-allowed';
+        if (webSearchEnabled) {
+            webSearchToggleBtn.className = 'sidebar-btn web-search-enabled';
+            webSearchToggleBtn.innerHTML = '<i class="fas fa-globe"></i> Web Search: ON';
         } else {
-            // Enable the button for Gemini models
-            webSearchToggleBtn.disabled = false;
-            webSearchToggleBtn.style.opacity = '1';
-            webSearchToggleBtn.style.cursor = 'pointer';
-            
-            if (webSearchEnabled) {
-                webSearchToggleBtn.className = 'sidebar-btn web-search-enabled';
-                webSearchToggleBtn.innerHTML = '<i class="fas fa-globe"></i> Web Search: ON';
-            } else {
-                webSearchToggleBtn.className = 'sidebar-btn web-search-disabled';
-                webSearchToggleBtn.innerHTML = '<i class="fas fa-globe-slash"></i> Web Search: OFF';
-            }
+            webSearchToggleBtn.className = 'sidebar-btn web-search-disabled';
+            webSearchToggleBtn.innerHTML = '<i class="fas fa-globe-slash"></i> Web Search: OFF';
         }
     }
 
     function loadWebSearchPreference() {
         const saved = localStorage.getItem('gemini-web-search-enabled');
         if (saved !== null) { webSearchEnabled = saved === 'true'; }
-        
-        // Check if current model is GitHub model and disable web search if needed
-        const selectedModel = modelSelector.value;
-        if (selectedModel.startsWith('github-') && webSearchEnabled) {
-            webSearchEnabled = false;
-            localStorage.setItem('gemini-web-search-enabled', 'false');
-        }
-        
         updateWebSearchButton();
     }
 
@@ -509,8 +456,7 @@
         disablePreviousRegenerateButtons();
         
         let searchIndicator = null;
-        const isGitHubModel = modelSelector.value.startsWith('github-');
-        if (webSearchEnabled && !isGitHubModel) {
+        if (webSearchEnabled) {
             searchIndicator = showSearchIndicator();
         }
         
@@ -519,11 +465,6 @@
         
         try {
             const selectedModel = modelSelector.value;
-            const isGitHubModel = selectedModel.startsWith('github-');
-            
-            // Ensure web search is disabled for GitHub models
-            const effectiveWebSearch = isGitHubModel ? false : webSearchEnabled;
-            
             const response = await fetch('/.netlify/functions/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -531,7 +472,7 @@
                     history: JSON.parse(JSON.stringify(conversationHistory)), 
                     model: selectedModel,
                     systemPrompt: systemPrompt,
-                    enableWebSearch: effectiveWebSearch
+                    enableWebSearch: webSearchEnabled
                 })
             });
             

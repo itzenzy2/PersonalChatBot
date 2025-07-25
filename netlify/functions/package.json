@@ -2,7 +2,6 @@
   "name": "gemini-functions",
   "version": "1.0.0",
   "dependencies": {
-    "@google/generative-ai": "^0.2.1",
-    "axios": "^1.6.2"
+    "@google/generative-ai": "^0.2.1"
   }
 }
