@@ -55,7 +55,7 @@ exports.handler = async function(event, context) {
       try {
         // Call GitHub Models API
         const response = await axios.post(
-          'https://models.github.ai/inference/chat/completions',
+          'https://models.inference.ai.azure.com/inference/chat/completions',
           {
             model: actualModelName,
             messages: messages,
@@ -80,27 +80,9 @@ exports.handler = async function(event, context) {
         };
       } catch (error) {
         console.error("GitHub Models API error:", error.response?.data || error.message);
-        
-        // Improved error handling to prevent [object Object] errors
-        let errorMessage;
-        if (error.response?.data?.error) {
-          // If error.response.data.error is an object, stringify it
-          errorMessage = typeof error.response.data.error === 'object' 
-            ? JSON.stringify(error.response.data.error) 
-            : error.response.data.error;
-        } else if (error.response?.data) {
-          // If error.response.data is an object, stringify it
-          errorMessage = typeof error.response.data === 'object' 
-            ? JSON.stringify(error.response.data) 
-            : error.response.data;
-        } else {
-          // Fallback to error message or a generic message
-          errorMessage = error.message || 'An unknown error occurred with GitHub Models API';
-        }
-        
         return { 
           statusCode: 500, 
-          body: JSON.stringify({ error: errorMessage }) 
+          body: JSON.stringify({ error: error.response?.data?.error || error.message }) 
         };
       }
     } else {
