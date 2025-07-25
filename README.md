@@ -21,7 +21,7 @@ A simple, customizable chat interface for Google's Gemini AI models and GitHub M
 
 - Node.js and npm installed
 - Google AI Studio API key for Gemini models
-- GitHub token for GitHub Models API access
+- GitHub token for GitHub Models API access (with `models:read` permission)
 
 ### Installation
 
@@ -41,7 +41,14 @@ A simple, customizable chat interface for Google's Gemini AI models and GitHub M
    GITHUB_TOKEN=your_github_token_here
    ```
 
-2. Deploy to Netlify or run locally using Netlify CLI:
+2. To obtain a GitHub token for GitHub Models API:
+   - Go to [GitHub Settings > Developer Settings > Personal Access Tokens](https://github.com/settings/tokens)
+   - Click "Generate new token" (classic or fine-grained)
+   - For fine-grained tokens, select the repositories you want to access
+   - Ensure the token has `models:read` permission
+   - Copy the generated token and add it to your `.env` file
+
+3. Deploy to Netlify or run locally using Netlify CLI:
    ```
    npm install -g netlify-cli
    netlify dev
